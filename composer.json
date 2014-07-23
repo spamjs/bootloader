@@ -1,9 +1,9 @@
 {
     "name": "jqgeeks/utils",
     "type": "library",
-    "description": "Modified Smarty for Rudrax",
-    "keywords": ["rudra", "API", "controller","smarty"],
-    "license": "MIT"
+    "description": "JQuery Utilitties compatible with rudrax framework",
+    "keywords": ["rudra", "API"],
+    "license": "MIT",
     
     "require": {
        "components/jquery": "2.*"
