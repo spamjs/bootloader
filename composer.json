@@ -6,6 +6,6 @@
     "license": "MIT",
     
     "require": {
-       "components/jquery": "2.*"
+      "frameworks/jquery": "dev-master"
     }
 }
