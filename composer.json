@@ -6,6 +6,6 @@
     "license": "MIT",
     
     "require": {
-      "frameworks/jquery": "1.*"
+      "frameworks/jquery": "2.*"
     }
 }
