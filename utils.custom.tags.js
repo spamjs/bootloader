@@ -191,7 +191,7 @@ utils.selectNamespace("utils.custom.css", function(css){
 			}
 		}
 		}
-		if(css.sheet.cssRules && !$.browser.msie){
+		if(css.sheet.cssRules && ($.browser && !$.browser.msie)){
 			css.add_ = css.add_FF;
 			css._add = css.FF_add;
 		} else {
