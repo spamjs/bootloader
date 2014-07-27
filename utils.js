@@ -118,7 +118,6 @@ window.utils = function(utils) {
 	utils.execute = {
 		id : 0,
 		once : function(cb,delta,obj){
-			console.log("utils.execute.once")
 			this._ = this._ || {};
 			this._.rtime = new Date();
 		    if (!this._.timeout) {
@@ -127,14 +126,12 @@ window.utils = function(utils) {
 		        this._.cb = cb;
 		        this._.args =  this.arguments;
 		    }
-		    console.log("utils.execute.ended")
 		}, now : function(){
 		    if (new Date() - this._.rtime < this._.delta) {
 		        setTimeout(utils.execute.now.bind(this), this._.delta);
 		    } else {
 		    	this._.timeout = false;
 		    	this._.args = this._.args || []; 
-		    	console.log('now',this._.cb)
 		        if(this._.cb)
 		        	this._.cb.call(this,this._,this._.args[2],this._.args[3],this._.args[4],this._.args[5]);
 		    } 
