@@ -1,12 +1,6 @@
-/* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-utils.selectNamespace('utils',function(utils){
+utils.define('utils.logger',function(logger){
     	///CONSOLE LOGGER
-	utils.Timer = function(){
+	logger.Timer = function(){
 		var startTime = new Date().getTime();
 		var lastTime = 0; var incTime =0;
 		var now = function(){
@@ -21,76 +15,102 @@ utils.selectNamespace('utils',function(utils){
 		}
 		return now;
 	}
-	utils.debugTimerMap = {};
-	utils.debugTimer = function(timer,clearNew){
-		var _timer = utils.debugTimerMap[timer];
-		if(!_timer || clearNew){
-			_timer = utils.debugTimerMap[timer] = new utils.Timer();
-		}
-		return timer + ":" + _timer() + "(+"+_timer.getIncTime()+")";
-	} 
 	
-	window._LOG = function(){
-		var LOG = { is_trace : false };
-		if (!window.console) window.console = {};
-		if (!window.console.log) window.console.log = function(){};
-		if (!window.console.trace) window.console.trace = function(){};
-		LOG.show = function(a,b,c,d,e,f,g,h,i){
-			if(window.console.log) window.console.log(a,b,c,d,e,f,g,h,i); 
-			this.trace(a,b,c,d,e,f,g,h,i);
+	logger.traceEvent = function Trace(timer) {
+		this.timer = timer;
+		this.length = 0;
+		this.push = Array.prototype.push;
+		this.pop = Array.prototype.pop;
+		this.splice = Array.prototype.splice;
+		this.push(timer);
+		this.error = function(err){
+			this.lineNumber = err.lineNumber;
+			this.fileName = err.fileName;
+			this.push(err.fileName);
+			this.push(err.lineNumber);
 		};
-	        LOG.json = function(a){
-			if(window.console.log) window.console.log(utils.stringify(a)); 
-		};
-		LOG.trace = function(a,b,c,d,e,f,g,h,i){ 
-			if(window.console.trace && LOG.is_trace) return window.console.trace(a,b,c,d,e,f,g,h,i);
-			return false;
-		};
-		if (!window.console.info) window.console.info = function(){};
-		LOG.info = function(a,b,c,d,e,f,g,h,i){
-			if(window.console.info) window.console.info(a,b,c,d,e,f,g,h,i); 
-			return this.trace(this,arguments);
-		};
-		if (!window.console.warn) window.console.warn = function(){};
-		LOG.warn = function(a,b,c,d,e,f,g,h,i){
-			if(window.console.warn) window.console.warn(a,b,c,d,e,f,g,h,i); 
-			this.trace(this,arguments);
-		};
-		if (!window.console.debug) window.console.debug = function(){};
-		LOG.debug = function(a,b,c,d,e,f,g,h,i){
-			if(window.console.debug) window.console.debug(a,b,c,d,e,f,g,h,i); 
-			this.trace(this,arguments);
-		};
-		if (!window.console.error) window.console.error = function(){};
-		LOG.error = function(a,b,c,d,e,f,g,h,i){
-			if(window.console.error) window.console.error(a,b,c,d,e,f,g,h,i); 
-			return this.trace(a,b,c,d,e,f,g,h,i);
-		};
-		LOG.timer = function(timer,message,arg1,arg2,arg3){
-			var isNew = (message===true);
-			var arg0 = message;
-			if(isNew) return LOG.warn(utils.debugTimer(timer,isNew),arg1,arg2,arg3);
-			if(message && message.name =='Error'){
-				arg0 = "["+message.lineNumber+":"+message.fileName + "]";
-			}
-			return LOG.warn(utils.debugTimer(timer,isNew),arg0,arg1,arg2,arg3);
-		};
-		return LOG;
-	}();
-	window.__LOG = {
-	        "log": function(){}, "warn": function(){},"debug": function(){},"info": function(){},
-	        "trace": function(){}, "error": function(){},"show": function(){},"timer" : function(){}
-	};
-	
-	window.LOG = window.__LOG;
-	utils.debugEnabled = function(enable,logType){
-		utils.debug = enable;
-		var logTypes = logType ? [logType] : ['warn','debug','info','trace','error','show','timer'];
-		for(var i in logTypes){
-			window.LOG[logTypes[i]] = enable ? window._LOG[logTypes[i]] : window.__LOG[logTypes[i]];
+		this.caller = function(caller){
+			this.callerName = caller.name;
+			this.push(caller.name);
+			this.callerFunction = caller.toString();
 		}
-	};
-	utils.debugToggle = function(logType){
-		window._LOG['is_'+logType] = !window._LOG['is_'+logType];
+		this.stackTrace = printStackTrace();
+		this.stackTrace.splice(0,6)
 	}
-})
+	
+	var debugTimerMap = {};
+	logger.debugTimer = function(timer,clearNew){
+		var _timer = debugTimerMap[timer];
+		if(!_timer || clearNew){
+			_timer = debugTimerMap[timer] = new logger.Timer();
+		}
+		var deBugMesgEvent = new logger.traceEvent(timer);
+		deBugMesgEvent.push(_timer());
+		deBugMesgEvent.push("+"+_timer.getIncTime())
+		return deBugMesgEvent;
+	};
+	
+	/**
+	 *  Functiont o return time taken so far
+	 * 
+	 *  @param timer - name of bookmark timer
+	 *  @param message 
+	 *  	- if true, then restarts the timer, else time-gap between this and last bookmark,
+	 *  	if passed new Error(), then will print the line no and file name.
+	 *  
+	 *  @param args - message to be printed
+	 */
+	logger.timer = function(timer,message,arg1,arg2,arg3){
+		var isNew = (message===true);
+		var deBugMesgEvent = logger.debugTimer(timer,isNew);
+		deBugMesgEvent.caller(arguments.callee.caller);
+		if(isNew)
+			return logger.info(deBugMesg,arg1,arg2,arg3);
+		if(message && message.name =='Error'){
+			deBugMesgEvent.error(message);
+			return logger.info(deBugMesgEvent,arg1,arg2,arg3);
+		} else 
+			return logger.info(deBugMesgEvent,message,arg1,arg2,arg3);
+	};
+	
+    /**
+     *  log for info purpose
+     */
+	logger.info = function () {
+        if (utils.config.debug && console && console.info) {
+            console.info.apply(this,arguments)
+        }
+    };
+	
+    /**
+     *  log for debugging
+     */
+	logger.debug = function () {
+        if (utils.config.debug && console && console.debug) {
+            console.debug.apply(this,arguments)
+        }
+    };
+	
+    /**
+     *  log for logging
+     */
+	logger.log = function () {
+        if (utils.config.debug && console && console.log) {
+            console.log.apply(this,arguments)
+        }
+    };
+    
+    /**
+     *  warnings, traces by default
+     *  can be suppressed by `silent` option.
+     */
+    logger.warn = function () {
+        if (!utils.config.silent && console) {
+            console.warn.apply(this,arguments)
+            if (utils.config.debug && console.trace) {
+                console.trace()
+            }
+        }
+    };
+    
+});
