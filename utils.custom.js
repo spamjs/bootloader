@@ -1,5 +1,7 @@
 utils.define('utils.custom', function(custom) {
 
+	utils.require('utils.browser','utils.format');
+	
 	custom.getEvent = function(eName, detail) {
 		return new CustomEvent(eName, {
 			detail : detail,
@@ -7,7 +9,12 @@ utils.define('utils.custom', function(custom) {
 			cancelable : true
 		});
 	};
-
+	custom.getEventDetail = function(event) {
+		return event.originalEvent.detail;
+	};
+	custom.dispatchEvent = function(elem,eName,eData){
+		return elem.dispatchEvent(custom.getEvent(eName,eData));
+	};
 	custom.validate = function($tag) {
 		var formatType = $tag.attr('formatType');
 		if (formatType) {
@@ -29,24 +36,6 @@ utils.define('utils.custom', function(custom) {
 			$tagwrap.addClass('has-error');
 	};
 	custom.preventPropagation = function(event) {
-		if (!event)
-			var event = window.event;
-		if (event) {
-			if (event.preventDefault) {
-				event.preventDefault();
-				event.cancelBubble = true;
-				event.returnValue = false;
-				event.stopPropagation && event.stopPropagation();
-				event.stopImmediatePropagation
-						&& event.stopImmediatePropagation();
-			} else {
-				event.cancelBubble = true;
-				event.returnValue = false;
-				event.stopPropagation && event.stopPropagation();
-				event.stopImmediatePropagation
-						&& event.stopImmediatePropagation();
-				return false;
-			}
-		}
+		return utils.preventPropagation(event);
 	};
 });

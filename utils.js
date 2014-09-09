@@ -18,7 +18,7 @@ window.utils = function(utils){
 	 *  @param fromString
 	 *  		Parent module name
 	 */
-	var extendClass = function(defObj,fromString){
+	var extendClass = function(defObj,fromString,dummyProto){
 		if(defObj._hasExtened_[fromString]) return defObj;
 		if(!MODULE_MAP[fromString]){
 			if(true && MODULE_PENDING[fromString]){
@@ -36,7 +36,7 @@ window.utils = function(utils){
 			if(MODULE_MAP[fromString]._parent_){
 				extendClass(defObj,MODULE_MAP[fromString]._parent_);
 			}
-			MODULE_MAP[fromString]._def_(defObj);
+			MODULE_MAP[fromString]._def_(defObj,dummyProto);
 			defObj._hasExtened_[fromString] = true;
 		} else {
 			delete MODULE_MAP[fromString];
@@ -52,11 +52,11 @@ window.utils = function(utils){
 			for(var prop in _proto_){
 				cons.prototype[prop] = _proto_[prop];
 			}
-			cons.prototype.parent = function(fun){
-				if(fun===undefined)
-					return Object.getPrototypeOf(this);
-				return Object.getPrototypeOf(this)[fun].bind(this);
-			}
+		}
+		cons.prototype.parent = function(fun){
+			if(fun===undefined)
+				return Object.getPrototypeOf(this);
+			return Object.getPrototypeOf(this)[fun].bind(this);
 		}
 	};
 	
@@ -67,12 +67,14 @@ window.utils = function(utils){
 			as : function(_def_){
 				if(!this._def_ ){
 					this._def_ = _def_;
-					this._def_(this);
+					var _protos_ = {};
+					this._def_(this,_protos_);
 					if(!this._instance_) this._instance_ = function(){};
 					if(typeof this._instance_ === 'function'){
+						this._instance_.prototype = _protos_;
 						extendProto(this._instance_,this._parent_);
 					}
-					console.log('defined::',this.module)
+					//console.log('defined::',this.module)
 					if(this._execute_) this._execute_();
 					var that = this;
 					utils.ready(function(){
@@ -84,7 +86,7 @@ window.utils = function(utils){
 			extend : function(_parent_){
 				if(!this._parent_){
 					this._parent_ = _parent_;
-					extendClass(this,this._parent_);
+					extendClass(this,this._parent_,{});
 				}
 				return this;
 			},
@@ -94,7 +96,9 @@ window.utils = function(utils){
 			instance : function(a,b,c,d,e,f,g,h){
 				if(this._instance_){
 					var _instance_ = this._instance_;
-					return new _instance_(a,b,c,d,e,f,g,h);
+					var newInst = new _instance_(a,b,c,d,e,f,g,h);
+					if(newInst._create_) newInst._create_();
+					return newInst;
 				}
 			}
 		};
@@ -171,6 +175,7 @@ window.utils = function(utils){
 					}
 				}
 			}
+			var RETMODULE = [],_args = arguments;
 			utils.files.loadJS.call(utils.files,js_list,function(){
 				for(var i in mod_list){
 					delete MODULE_PENDING[mod_list[i]];
@@ -180,7 +185,11 @@ window.utils = function(utils){
 				for(var i in _MODULE_CB){
 					_MODULE_CB[i]();
     	    	}
+				for(var i in _args){
+					RETMODULE.push(MODULE_MAP[_args[i]]);
+				}
 			});
+			return RETMODULE;
 		}
 	};
 	utils.files = function(files) {
