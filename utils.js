@@ -1,8 +1,12 @@
 window.utils = function(utils){
-
+	poly();
 	var MODULE_CB = [];
 	var MODULE_MAP = {};
 	var MODULE_PENDING = {};
+	
+	utils.getAll = function(){
+		return [MODULE_CB,MODULE_MAP,MODULE_PENDING]
+	};
 	
 	/**
 	 *  extendClass extends the Module from given parent Class name,
@@ -74,7 +78,6 @@ window.utils = function(utils){
 						this._instance_.prototype = _protos_;
 						extendProto(this._instance_,this._parent_);
 					}
-					//console.log('defined::',this.module)
 					if(this._execute_) this._execute_();
 					var that = this;
 					utils.ready(function(){
@@ -147,18 +150,32 @@ window.utils = function(utils){
 	};
 	
 	var DIR_MATCH = {};
-	var BASE_URL = "/res/";
+	var CONTEXT_PATH = "/";
+	var RESOURCE_PATH = "/res";
 	var COMBINEJS = true;
+	utils.getOneModule = function(module,path){
+		utils.files.loadJS(path);
+		return MODULE_MAP[module];
+	};
+	utils.getAllModule = function(module,path,mod_list,js_list){
+		MODULE_PENDING[module] = module;
+		mod_list.push(module);
+		js_list.push(path);
+	};
 	utils.require = utils.loadModule = function(){
 		if(arguments.length==1){
 			var module = arguments[0];
 			if(!MODULE_MAP[module]){
-				for(var i in DIR_MATCH){
-					if(DIR_MATCH[i].reg.test(module)){
-						utils.files.loadJS(BASE_URL+DIR_MATCH[i].dir+module+'.js');
-						return MODULE_MAP[module];
+				var p = utils.files.resolve(module);
+				if(!p){
+					for(var i in DIR_MATCH){
+						if(DIR_MATCH[i].reg.test(module)){
+							return utils.getOneModule(module,RESOURCE_PATH+DIR_MATCH[i].dir+module+'.js');
+						}
 					}
-				}
+				} else if(!MODULE_MAP[p.module]){
+					return utils.getOneModule(p.module,p.url);
+				} else return MODULE_MAP[p.module];
 			} else return MODULE_MAP[module];
 		} else if(arguments.length>1){
 			var js_list = [];
@@ -166,12 +183,16 @@ window.utils = function(utils){
 			for (var j = 0; j < arguments.length; j++) {
 				var module = arguments[j];
 				if(!MODULE_MAP[module]){
-					for(var i in DIR_MATCH){
-						if(DIR_MATCH[i].reg.test(module)){
-							MODULE_PENDING[module] = module;
-							mod_list.push(module);
-							js_list.push(BASE_URL+DIR_MATCH[i].dir+module+'.js');
+					var p = utils.files.resolve(module);
+					if(!p){
+						for(var i in DIR_MATCH){
+							if(DIR_MATCH[i].reg.test(module)){
+								utils.getAllModule(module,RESOURCE_PATH+DIR_MATCH[i].dir+module+'.js',
+										mod_list,js_list);
+							}
 						}
+					} else if(!MODULE_MAP[p.module]){
+						utils.getAllModule(p.module,p.url,mod_list,js_list);
 					}
 				}
 			}
@@ -188,20 +209,53 @@ window.utils = function(utils){
 				for(var i in _args){
 					RETMODULE.push(MODULE_MAP[_args[i]]);
 				}
+				for(var i in mod_list){
+					if(!MODULE_MAP[mod_list[i]]){
+						console.warn(mod_list[i],'is not registered module');
+					};
+				}
 			});
 			return RETMODULE;
 		}
+	};
+	var createPackList = function(pack,from,to){
+		if(!from[pack]) return to;
+		for(var i in from[pack]['@']){
+			createPackList(from[pack]['@'][i],from,to);
+		}
+		return to.concat(from[pack]['files'])
+	};
+	utils.resolvePack = function(packs){
+		var files = [];
+		for(var pack in packs){
+			files = createPackList(pack,packs,files);
+		}
+		utils.require.apply(utils,files)
+	};
+	utils.loadPackage = function(pack){
+		utils.files.load('some.js?$='+Array.prototype.slice.call(arguments).join(','));
 	};
 	utils.files = function(files) {
 	    files.loaded_js = [];
 	    files.setContext = function(context){
 	    	this.context = context;
 	    };
+	    files.resolve = function(path){
+	    	if(!path.endsWith('.js') && !path.endsWith('.css')) 
+	    		path = path+'.js';
+	    	var p = path.split('/');
+	    	var url = false;
+	    	if(p.length>1){
+	    		if(p[0]=='') url = (CONTEXT_PATH + path.slice(1));
+	    		else url = (RESOURCE_PATH + path);
+	    	} else return false;
+	    	return { url : url, module : p[p.length-1].replace(/([\w]+)\.js$|.css$/, "$1")}
+	    };
 	    files.setResourcePath = function(path){
 	    	this.rpath = path;
 	    };
 	    files.loadJS = function(js){
-	    	files.load(BASE_URL  + js);
+	    	files.load(RESOURCE_PATH  + js);
 	    };
 	    files.load = function(js){
 	        $('head').append('<script src="' + js + '" type="text/javascript"></script>');
@@ -241,9 +295,17 @@ window.utils = function(utils){
 	    return files;
 	}({});
 	
+	var trimSlashes = function(str){
+		return str.replace(/(^\/)|(\/$)/g, "");
+	};
+	
 	utils.config = function(_config){
 		_config.set = function(config){
-			BASE_URL =  config.baseUrl || BASE_URL;
+			CONTEXT_PATH = config.contextPath ? ("/"+trimSlashes(config.contextPath) + "/") : CONTEXT_PATH;
+			RESOURCE_PATH =  (config.contextPath && config.resourcePath)
+								? ('/' + trimSlashes(config.contextPath) 
+										+ '/' +trimSlashes(config.resourcePath) + '/') 
+								: RESOURCE_PATH;
 			COMBINEJS = (config.combine!=undefined) ? config.combine : COMBINEJS;
 			if(config.moduleDir){
 				for(var reg in config.moduleDir){
@@ -263,17 +325,33 @@ window.utils = function(utils){
 	utils.ready = function(cb){
 		return $(document).ready(cb);
 	}
+	//utils.ready(function(){
+		var scripts = document.getElementsByTagName('script');
+		for(var i in scripts){
+			var p = utils.files.resolve(scripts[i].src || "");
+			if(p){
+				console.log(p.module);
+				MODULE_MAP[p.module] = MODULE_MAP[p.module] || {};
+			}
+		}
+	//});
 	return utils;
 }({});
-
-if ( typeof Object.getPrototypeOf !== "function" ) {
-  if ( typeof "test".__proto__ === "object" ) {
-    Object.getPrototypeOf = function(object){
-      return object.__proto__;
-    };
-  } else {
-    Object.getPrototypeOf = function(object){
-      return object.constructor.prototype;
-    };
-  }
+function poly(){
+	if ( typeof Object.getPrototypeOf !== "function" ) {
+		  if ( typeof "test".__proto__ === "object" ) {
+		    Object.getPrototypeOf = function(object){
+		      return object.__proto__;
+		    };
+		  } else {
+		    Object.getPrototypeOf = function(object){
+		      return object.constructor.prototype;
+		    };
+		  }
+		}
+		if (typeof String.prototype.endsWith !== 'function') {
+		    String.prototype.endsWith = function(suffix) {
+		        return this.indexOf(suffix, this.length - suffix.length) !== -1;
+		    };
+		}	
 }
