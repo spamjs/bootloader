@@ -1,44 +1,31 @@
 utils.define('utils.abstracts.template', function(template,_instance_) {
-	var DATA_PATH = 'data-path';
-	var DATA_ONCHANGE = 'data-onchange';
-	var DATA_FORMAT = 'data-format';
 	var custom = utils.require('utils.custom');
 	var odo = utils.require('utils.odo');
 	var tag = utils.require('utils.custom.tag');
-	//var wiretap = utils.require('utils.tools.wiretap');
+	var _template = utils.require('utils.template');
+
+	var DATA_PATH = 'data-path';
+	var DATA_ONCHANGE = 'data-onchange';
+	var DATA_FORMAT = 'data-format';
 	
-	template._instance_ = function(data,$HTML){
-		this.data = odo.instance();
-		this.$HTML = $HTML;
-		this._bindDomEvents_();
-		this._bindDataEvents_();
-		this.data.update(data);
+	template._instance_ = function(obj){
+		template._create_template_(this,obj);
 	};
-	
-	_instance_.update = function(dData){
-		return this.data.update(dData);
-	};
-	_instance_._onchange_ = function(dPath,dValue){
-		return null;
-	};
-	_instance_._datachange_ = function(dPath,dValue){
-		return null;
-	};
-	_instance_.sub = function(dPath,listner){
-		if(dPath=='*') return this._datachange_ = dPathListner;
-		return this.data.sub(dPath,dPathListner);
-	};
-	_instance_.on = function(dPath,dPathListner,listner){
-		if(dPath=='data'){
-			return _instance_.sub(dPath,dPathListner);
-		} else {
-			return this.$HTML.on(dPath, dPathListner,listner);
+	template._create_template_ = function(THIS,obj){
+		THIS.data = odo.instance();
+		//THIS.$HTML = $HTML;
+		THIS._bindDomEvents_();
+		THIS._bindDataEvents_();
+		THIS.data.update(obj.data);
+		for(var prop in obj){
+			THIS[prop] =  obj[prop];
 		}
+		//return _template.loadHTML(THIS);
 	};
 	_instance_._bindDomEvents_ = function(){
 		if(this.$HTML){
 			var THAT = this;
-			this.$HTML.on('TagOnChange',function(e){
+			THIS.$HTML.on('TagOnChange',function(e){
 				var $tag = $(e.target);
 				if(!$tag.hasClass('disabled')){
 					var detail = custom.getEventDetail(e);
@@ -55,7 +42,7 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	_instance_._bindDataEvents_ = function(){
 		if(this.data){
 			var THAT = this;
-			this.data.sub('*',function(dEvent, b, c, e, THIS){
+			THIS.data.sub('*',function(dEvent, b, c, e, THIS){
 				var elem, _value, isTag;
 				if(dEvent.value && dEvent.value._tag_){
 					 isTag = true;
@@ -82,4 +69,25 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 		}
 	};
 	
+	// Properties per template instance
+	_instance_.update = function(dData){
+		return this.data.update(dData);
+	};
+	_instance_._onchange_ = function(dPath,dValue){
+		return null;
+	};
+	_instance_._datachange_ = function(dPath,dValue){
+		return null;
+	};
+	_instance_.sub = function(dPath,listner){
+		if(dPath=='*') return this._datachange_ = dPathListner;
+		return this.data.sub(dPath,dPathListner);
+	};
+	_instance_.on = function(dPath,dPathListner,listner){
+		if(dPath=='data'){
+			return _instance_.sub(dPath,dPathListner);
+		} else {
+			return this.$HTML.on(dPath, dPathListner,listner);
+		}
+	};
 });

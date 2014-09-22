@@ -1,8 +1,11 @@
 utils.config.set({
 	debug : true,
-	baseUrl : '/app/web/resources/',
+	contextPath : 'app',
+	resourcePath : 'resources',
 	moduleDir : {
-		'utils.*' : '../lib/jqgeeks/utils/',
-		'usertable.*' : '/page/'
+		'dff.*' : 'dff/models/',
+		'utils.*' : '../libs/jqgeeks/utils/'
 	},
+	template : 'folader',
+	combine : true,
 });
