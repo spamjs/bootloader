@@ -73,6 +73,7 @@ window.utils = function(utils){
 					this._def_ = _def_;
 					var _protos_ = {};
 					this._def_(this,_protos_);
+					console.warn('-',this.module,this._instance_)
 					if(!this._instance_) this._instance_ = function(){};
 					if(typeof this._instance_ === 'function'){
 						this._instance_.prototype = _protos_;
@@ -117,7 +118,7 @@ window.utils = function(utils){
 	};
 	
 	utils.define = function(classPath,asFun){
-		console.log(classPath,asFun)
+		//console.log(classPath,asFun)
 		if(!classPath){
 			/**
 			 * If classPath is not given then 'anonymous' module should be created
@@ -144,7 +145,7 @@ window.utils = function(utils){
 			} //else throw new Error("Cannot redefine "+classPath + " as it already exists");
 			if(MODULE_MAP[classPath] && asFun && typeof asFun == 'function'){
 				MODULE_MAP[classPath].as(asFun);
-				console.log('classPath',classPath)
+				//console.log('classPath',classPath)
 			}
 			return MODULE_MAP[classPath] ;
 		} else if(typeof classPath=='function'){
@@ -158,7 +159,7 @@ window.utils = function(utils){
 	var COMBINEJS = true;
 	utils.getOneModule = function(module,path){
 		utils.files.loadJS(path);
-		console.log(module,path,MODULE_MAP);
+		//console.log(module,path,MODULE_MAP);
 		return MODULE_MAP[module];
 	};
 	utils.getAllModule = function(module,path,mod_list,js_list){
@@ -335,7 +336,7 @@ window.utils = function(utils){
 		for(var i in scripts){
 			var p = utils.files.resolve(scripts[i].src || "");
 			if(p){
-				console.log(p.module);
+				//console.log(p.module);
 				MODULE_MAP[p.module] = MODULE_MAP[p.module] || {};
 			}
 		}

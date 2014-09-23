@@ -9,24 +9,27 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	var DATA_FORMAT = 'data-format';
 	
 	template._instance_ = function(obj){
+		if(!obj) return;
 		template._create_template_(this,obj);
 	};
 	template._create_template_ = function(THIS,obj){
+		THIS.name = this.module;
 		THIS.data = odo.instance();
-		//THIS.$HTML = $HTML;
-		console.log('_bindDomEvents_',THIS)
-		THIS._bindDomEvents_();
-		THIS._bindDataEvents_();
-		THIS.data.update(obj.data);
+		var data = obj.data || {};
+		delete obj.data;
 		for(var prop in obj){
 			THIS[prop] =  obj[prop];
 		}
-		return _template.loadHTML(THIS);
+		return _template.loadHTML(THIS,function(){
+			THIS._bindDomEvents_();
+			THIS._bindDataEvents_();
+			THIS.data.update(data)
+		});
 	};
 	_instance_._bindDomEvents_ = function(){
-		if(this.$HTML){
+		if(this.$div){
 			var THAT = this;
-			THIS.$HTML.on('TagOnChange',function(e){
+			THAT.$div.on('TagOnChange',function(e){
 				var $tag = $(e.target);
 				if(!$tag.hasClass('disabled')){
 					var detail = custom.getEventDetail(e);
@@ -43,12 +46,12 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	_instance_._bindDataEvents_ = function(){
 		if(this.data){
 			var THAT = this;
-			THIS.data.sub('*',function(dEvent, b, c, e, THIS){
+			THAT.data.sub('*',function(dEvent, b, c, e, THIS){
 				var elem, _value, isTag;
 				if(dEvent.value && dEvent.value._tag_){
 					 isTag = true;
 				}
-				$("[" + DATA_PATH + "='"+dEvent.path+"']", THAT.$HTML).each(function() {
+				$("[" + DATA_PATH + "='"+dEvent.path+"']", THAT.$div).each(function() {
 					var $tag = $(this), param = $tag.attr(DATA_PATH);
 					if($tag.hasClass('tag')){
 						if(isTag) $tag.setData(dEvent.value);
@@ -88,7 +91,7 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 		if(dPath=='data'){
 			return _instance_.sub(dPath,dPathListner);
 		} else {
-			return this.$HTML.on(dPath, dPathListner,listner);
+			return this.$div.on(dPath, dPathListner,listner);
 		}
 	};
 });
