@@ -14,13 +14,14 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	template._create_template_ = function(THIS,obj){
 		THIS.data = odo.instance();
 		//THIS.$HTML = $HTML;
+		console.log('_bindDomEvents_',THIS)
 		THIS._bindDomEvents_();
 		THIS._bindDataEvents_();
 		THIS.data.update(obj.data);
 		for(var prop in obj){
 			THIS[prop] =  obj[prop];
 		}
-		//return _template.loadHTML(THIS);
+		return _template.loadHTML(THIS);
 	};
 	_instance_._bindDomEvents_ = function(){
 		if(this.$HTML){

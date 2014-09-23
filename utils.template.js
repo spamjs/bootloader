@@ -9,6 +9,7 @@ utils.define('utils.template', function(template,_in_) {
 		e(tname).extend('utils.abstracts.template').as(cb);
 	};
 	template.load = function(obj){
+		console.info(obj,utils.require(obj.name))
 		return utils.require(obj.name).instance(obj);
 	};
 	

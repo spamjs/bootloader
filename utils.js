@@ -158,7 +158,7 @@ window.utils = function(utils){
 	var COMBINEJS = true;
 	utils.getOneModule = function(module,path){
 		utils.files.loadJS(path);
-		console.log(path);
+		console.log(module,path,MODULE_MAP);
 		return MODULE_MAP[module];
 	};
 	utils.getAllModule = function(module,path,mod_list,js_list){
@@ -177,6 +177,7 @@ window.utils = function(utils){
 							return utils.getOneModule(module,RESOURCE_PATH+DIR_MATCH[i].dir+module+'.js');
 						}
 					}
+					return utils.getOneModule(module,RESOURCE_PATH+module+'.js');
 				} else if(!MODULE_MAP[p.module]){
 					return utils.getOneModule(p.module,p.url);
 				} else return MODULE_MAP[p.module];
