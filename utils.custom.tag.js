@@ -4,6 +4,7 @@ utils.define('utils.custom.tag', function(tag) {
 	
 	tag._ready_ = function() {
 		
+		console.info('setValue')
 		$("body").on("change", "input.tag", function(e) {
 			var $tag = $(this); // .parents('.tag');
 			var valid = custom.validate($tag);
@@ -21,6 +22,6 @@ utils.define('utils.custom.tag', function(tag) {
 		$.fn.getValue = function(){
 			return $(this).val();
 		};
-		
 	};
+	
 });

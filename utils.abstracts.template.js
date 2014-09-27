@@ -23,7 +23,8 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 		return _template.loadHTML(THIS,function(){
 			THIS._bindDomEvents_();
 			THIS._bindDataEvents_();
-			THIS.data.update(data)
+			THIS.data.update(data);
+			if(THIS._ready_) THIS._ready_();
 		});
 	};
 	_instance_._bindDomEvents_ = function(){
@@ -84,12 +85,12 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 		return null;
 	};
 	_instance_.sub = function(dPath,listner){
-		if(dPath=='*') return this._datachange_ = dPathListner;
-		return this.data.sub(dPath,dPathListner);
+		if(dPath=='*') return this._datachange_ = listner;
+		return this.data.sub(dPath,listner);
 	};
 	_instance_.on = function(dPath,dPathListner,listner){
-		if(dPath=='data'){
-			return _instance_.sub(dPath,dPathListner);
+		if(dPath=='DataChange'){
+			return this.sub(dPath,listner);
 		} else {
 			return this.$div.on(dPath, dPathListner,listner);
 		}
