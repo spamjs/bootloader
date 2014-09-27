@@ -14,11 +14,12 @@ utils.define('utils.template', function(template,_in_) {
 		if(!THIS.$div){
 			$.ajax({
 				datatype : "html",
-				url: "/"+utils.config.contextPath+"/template?p=" + THIS.name,
+				url: "/"+utils.config.contextPath+"/template/" + THIS.handler,
 				type : 'GET',
 				data : {},
 				success : function(msg){
 					THIS.$div = $(msg);
+					console.log(THIS.$parent,THIS.$div)
 					if(THIS.$parent) THIS.$parent.append(THIS.$div);
 					if(cb) cb();
 				},

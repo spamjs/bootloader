@@ -95,4 +95,7 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 			return this.$div.on(dPath, dPathListner,listner);
 		}
 	};
+	_instance_.onReady = function(_ready_){
+		this._ready_ = _ready_; return this;
+	};
 });

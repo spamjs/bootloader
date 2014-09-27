@@ -72,8 +72,11 @@ window.utils = function(utils){
 				if(!this._def_ ){
 					this._def_ = _def_;
 					var _protos_ = {};
-					this._def_(this,_protos_);
-					console.warn('-',this.module,this._instance_)
+					try	{
+						this._def_(this,_protos_);
+					} catch (e){
+						console.warn(this.module,e);
+					}
 					if(!this._instance_) this._instance_ = function(){};
 					if(typeof this._instance_ === 'function'){
 						this._instance_.prototype = _protos_;
