@@ -25,6 +25,7 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 			THIS._bindDataEvents_();
 			THIS.data.update(data);
 			if(THIS._ready_) THIS._ready_();
+			if(THIS._ready__) THIS._ready__();
 		});
 	};
 	_instance_._bindDomEvents_ = function(){
@@ -96,6 +97,6 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 		}
 	};
 	_instance_.onReady = function(_ready_){
-		this._ready_ = _ready_; return this;
+		this._ready__ = _ready_; return this;
 	};
 });
