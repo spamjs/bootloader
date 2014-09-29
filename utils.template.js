@@ -7,8 +7,7 @@ utils.define('utils.template', function(template,_in_) {
 		return utils.define(tname).extend('utils.abstracts.template').as(cb);
 	};
 	template.load = function(obj){
-		console.info(obj,utils.require(obj.name))
-		return utils.require(obj.name).instance(obj);
+		return utils.require(obj.name || 'utils.abstracts.template').instance(obj);
 	};
 	template.loadHTML = function(THIS,cb) {
 		if(!THIS.$div){
@@ -19,7 +18,6 @@ utils.define('utils.template', function(template,_in_) {
 				data : {},
 				success : function(msg){
 					THIS.$div = $(msg);
-					console.log(THIS.$parent,THIS.$div)
 					if(THIS.$parent) THIS.$parent.append(THIS.$div);
 					if(cb) cb();
 				},
