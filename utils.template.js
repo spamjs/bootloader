@@ -21,7 +21,8 @@ utils.define('utils.template', function(template,_in_) {
 				data : THIS.params,
 				success : function(msg){
 					THIS.$div = $(msg);
-					if(THIS.$parent) THIS.$parent.append(THIS.$div);
+					if(THIS.$parent && THIS.replace) THIS.$parent.html(THIS.$div);
+					else if(THIS.$parent)  THIS.$parent.append(THIS.$div);
 					if(cb) cb();
 				},
 				error : function(msg) {

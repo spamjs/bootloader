@@ -1,5 +1,6 @@
 utils.define('utils.abstracts.page', function(page,_instance_) {
 	var custom = utils.require('utils.custom');
+	var json = utils.require('utils.json');
 	var _template = utils.require('utils.template');
 
 	page.find = page.query = page.$ = function(a,b){
@@ -15,6 +16,6 @@ utils.define('utils.abstracts.page', function(page,_instance_) {
 	};
 	utils.ready(function(){
 		page.$body = $('body');
-		page.data = utils.parse($('#page_json').attr('data-value'));
+		page.data = json.parse($('#page_json').attr('data-value'));
 	});
 });
