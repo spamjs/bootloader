@@ -13,9 +13,12 @@ utils.define('utils.template', function(template,_in_) {
 		if(!THIS.$div){
 			$.ajax({
 				datatype : "html",
-				url: "/"+utils.config.contextPath+"/template/" + THIS.handler,
+				url: "/"+utils.config.contextPath+"/template/" + THIS.handler + "?"+decodeURIComponent($.param({
+					_handler : THIS.handler,
+					_name : THIS.name
+				})),
 				type : 'GET',
-				data : {},
+				data : THIS.params,
 				success : function(msg){
 					THIS.$div = $(msg);
 					if(THIS.$parent) THIS.$parent.append(THIS.$div);

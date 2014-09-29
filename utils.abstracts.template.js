@@ -79,6 +79,9 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	_instance_.update = function(dData){
 		return this.data.update(dData);
 	};
+	_instance_.get = function(a,b,c,d){
+		return this.data.get(a,b,c,d);
+	};
 	_instance_._onchange_ = function(dPath,dValue){
 		return null;
 	};
@@ -89,6 +92,9 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 		if(dPath=='*') return this._datachange_ = listner;
 		return this.data.sub(dPath,listner);
 	};
+	_instance_.compute = function(path,cb){
+		return this.data.compute(path,cb);
+	}
 	_instance_.on = function(dPath,dPathListner,listner){
 		if(dPath=='DataChange'){
 			return this.sub(dPath,listner);

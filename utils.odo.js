@@ -34,6 +34,7 @@ utils.define('utils.odo', function(odo, _instance_) {
 		this.event_map = {};
 		this.replace_path = {};
 		this.SLAVE = null;
+		this.COMPUTED = {};
 		this.onchange_fun = {
 			next : this.next
 		};
@@ -278,13 +279,25 @@ utils.define('utils.odo', function(odo, _instance_) {
 		this.onchange_map[key] = val;
 		utils.executable.once.call(this, this.trigger.bind(this));
 	};
-
+	
+	_instance_.compute = function(path,cb){
+		return this.COMPUTED[path] = cb;
+	};
+	
 	// process event queue
 	_instance_.trigger = function() {
-		for ( var key in this.onchange_map) {
+		for(var key in this.onchange_map) {
 			this._callFun(key, this.onchange_map[key]);
 			delete this.onchange_map[key]
 		}
+		this.triggerComputed();
 		// delete refs...???
 	};
+	_instance_.triggerComputed = function() {
+		for(var path in this.COMPUTED){
+			var val = this.COMPUTED[path].bind(this)();
+			this.set(path,val);
+			this._callFun(path, val);
+		}
+	}
 });
