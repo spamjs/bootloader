@@ -11,7 +11,7 @@ utils.define('utils.odo', function(odo, _instance_) {
 		this.push = Array.prototype.push;
 		this.pop = Array.prototype.pop;
 		this.splice = Array.prototype.splice;
-		this.push(key);
+		this.push(this.path);
 		this.preventEvent = false;
 	};
 	odo.dataEvent.prototype.stop = function() {

@@ -35,12 +35,14 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 				var $tag = $(e.target);
 				if(!$tag.hasClass('disabled')){
 					var detail = custom.getEventDetail(e);
-					detail.fieldType =  $tag.attr('name') || $tag.attr('fieldType');
-					detail.path = $tag.attr(DATA_PATH);
-					detail.change = $tag.attr(DATA_ONCHANGE);
-					var value = $tag.getValue();
-					THAT.data.change(detail.path,value);
-					THAT._onchange_(detail.path,value);
+					if(detail.isValid){
+						detail.fieldType =  $tag.attr('name') || $tag.attr('fieldType');
+						detail.path = $tag.attr(DATA_PATH);
+						detail.change = $tag.attr(DATA_ONCHANGE);
+						var value = $tag.getValue();
+						THAT.data.change(detail.path,value);
+						THAT._onchange_(detail.path,value);
+					}
 				}
 			});
 		}
