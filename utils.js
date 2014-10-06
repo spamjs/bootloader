@@ -160,19 +160,32 @@ window.utils = function(utils){
 	var CONTEXT_PATH = "/";
 	var RESOURCE_PATH = "/res";
 	var COMBINEJS = true;
+	utils._FILES_ = {};
+	
 	utils.getOneModule = function(module,path){
-		utils.files.loadJS(path);
+		utils.files.loadJS(utils.url.clean(path));
 		//console.log(module,path,MODULE_MAP);
 		return MODULE_MAP[module];
 	};
 	utils.getAllModule = function(module,path,mod_list,js_list){
 		MODULE_PENDING[module] = module;
 		mod_list.push(module);
-		js_list.push(path);
+		js_list.push(utils.url.clean(path));
 	};
 	utils.require = utils.loadModule = function(){
-		if(arguments.length==1){
-			var module = arguments[0];
+		var _mods_ = [], _bundles_ = [];
+		for (var j = 0; j < arguments.length; j++){
+			if(arguments[j].indexOf(":")==0){
+				_bundles_.push(arguments[j].substr(1));
+			} else {
+				_mods_.push(arguments[j])
+			}
+		}
+		if(_bundles_.length>0){
+			utils.loadBundle.apply(this,_bundles_);
+		}
+		if(_mods_.length==1){
+			var module = _mods_[0];
 			if(!MODULE_MAP[module]){
 				var p = utils.files.resolve(module);
 				if(!p){
@@ -186,11 +199,11 @@ window.utils = function(utils){
 					return utils.getOneModule(p.module,p.url);
 				} else return MODULE_MAP[p.module];
 			} else return MODULE_MAP[module];
-		} else if(arguments.length>1){
+		} else if(_mods_.length>1){
 			var js_list = [];
 			var mod_list = [];
-			for (var j = 0; j < arguments.length; j++) {
-				var module = arguments[j];
+			for (var j = 0; j < _mods_.length; j++) {
+				var module = _mods_[j];
 				if(!MODULE_MAP[module]){
 					var p = utils.files.resolve(module);
 					if(!p){
@@ -239,9 +252,9 @@ window.utils = function(utils){
 		for(var pack in packs){
 			files = createPackList(pack,packs,files);
 		}
-		utils.require.apply(utils,files)
+		utils.require.apply(this,files)
 	};
-	utils.loadPackage = function(pack){
+	utils.loadBundle = utils.loadPackage = function(pack){
 		utils.files.load('some.js?$='+Array.prototype.slice.call(arguments).join(','));
 	};
 	utils.files = function(files) {
@@ -267,20 +280,21 @@ window.utils = function(utils){
 	    	files.load(RESOURCE_PATH  + js);
 	    };
 	    files.load = function(js){
-	        $('head').append('<script src="' + js + '" type="text/javascript"></script>');
+	        $('head').append('<script src="' + js + '" onload="utils_files_resolve()" type="text/javascript"></script>');
 	    };
 	    files.loadJS = function() {
 	    	var file,list=[],cb;
 	    	var first = arguments[0];
-	    	if(typeof first === 'string'){
-	    		file = first;
-	    		for (var j = 1; j < arguments.length; j++){
-    				list.push(arguments[j]);
+	    	if(typeof arguments[0] === 'string'){
+	    		for (var j = 0; j < arguments.length; j++){
+	    			if(!utils._FILES_[arguments[j]])
+	    				list.push(arguments[j]);
     			}
 	    	} else if($.isArray(arguments[0])){
-	    		file = arguments[0][0];
-	    		arguments[0].splice(0,1);
-	    		list = arguments[0];
+	    		for (var j = 0; j < arguments[0].length; j++){
+	    			if(!utils._FILES_[arguments[0][j]])
+	    				list.push(arguments[0][j]);
+    			}
 	    		if(arguments[1] && typeof arguments[1]=='function'){
 	    			cb = arguments[1];
 	    		}
@@ -288,16 +302,20 @@ window.utils = function(utils){
 	    	if(COMBINEJS){
 	    		$.ajax({
 	    			async: false,
-	    			url: file+'?@='+list.join(','),
+	    			url: RESOURCE_PATH + 'combine.js?@='+list.join(','),
 	    			dataType: "script",
 	    			complete : function(){
-	    				return cb && cb();
+	    				for(var i in list){
+	    					utils._FILES_[list[i]] = list[i];
+	    				}
+	    				cb && cb();
 	    			}
 	    		});
 	    	} else {
-	    		files.load(file);
+	    		//files.load(file);
 	    		for(var i in list){
 	    			files.load(list[i]);
+	    			utils._FILES_[list[i]] = list[i];
 	    		}
 	    	} 
 	    };
@@ -340,6 +358,8 @@ window.utils = function(utils){
 			var p = utils.files.resolve(scripts[i].src || "");
 			if(p){
 				//console.log(p.module);
+				var cleanSRC = scripts[i].src.replace(document.location.origin,'')
+				utils._FILES_[cleanSRC] = cleanSRC
 				MODULE_MAP[p.module] = MODULE_MAP[p.module] || {};
 			}
 		}
@@ -363,4 +383,39 @@ function poly(){
 		        return this.indexOf(suffix, this.length - suffix.length) !== -1;
 		    };
 		}	
+}
+
+utils.define('utils.url', function(url) {
+	url.getParam = function (name,_url) {
+	    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+	    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+	        results = regex.exec(_url || location.search);
+	    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+	};
+	url.getValueAtIndex = function (index) {
+		var data = window.location.pathname.split("/");
+		return (data[index]);
+	};
+	url.clean = function(url){
+		var ars = url.split('/');
+		var domain = ars.shift();
+		var parents = [];
+		for( var i in ars) {
+		    switch(ars[i]) {
+		        case '.':
+		        // Don't need to do anything here
+		        break;
+		        case '..':
+		        	parents.pop()
+		        break;
+		        default:
+		        	parents.push(ars[i]);
+		        break;
+		    }
+		}
+		return domain +  '/'  + parents.join( '/');
+	};
+});
+utils_files_resolve = function(){
+	alert('okaaa');
 }
