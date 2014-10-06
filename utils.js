@@ -163,7 +163,7 @@ window.utils = function(utils){
 	utils._FILES_ = {};
 	
 	utils.getOneModule = function(module,path){
-		utils.files.loadJS(utils.url.clean(path));
+		utils.files.loadFiles(utils.url.clean(path));
 		//console.log(module,path,MODULE_MAP);
 		return MODULE_MAP[module];
 	};
@@ -219,7 +219,7 @@ window.utils = function(utils){
 				}
 			}
 			var RETMODULE = [],_args = arguments;
-			utils.files.loadJS.call(utils.files,js_list,function(){
+			utils.files.loadFiles.call(utils.files,js_list,function(){
 				for(var i in mod_list){
 					delete MODULE_PENDING[mod_list[i]];
 				}
@@ -255,7 +255,8 @@ window.utils = function(utils){
 		utils.require.apply(this,files)
 	};
 	utils.loadBundle = utils.loadPackage = function(pack){
-		utils.files.load('some.js?$='+Array.prototype.slice.call(arguments).join(','));
+		//TODO:- load packs which are not loaded
+		utils.files.loadJSFile('bundle.js?$='+Array.prototype.slice.call(arguments).join(','));
 	};
 	utils.files = function(files) {
 	    files.loaded_js = [];
@@ -263,7 +264,9 @@ window.utils = function(utils){
 	    	this.context = context;
 	    };
 	    files.resolve = function(path){
-	    	if(!path.endsWith('.js') && !path.endsWith('.css')) 
+	    	var isJS = path.endsWith('.js');
+	    	var isCSS = path.endsWith('.css');
+	    	if(!isJS && !isCSS) 
 	    		path = path+'.js';
 	    	var p = path.split('/');
 	    	var url = false;
@@ -271,35 +274,40 @@ window.utils = function(utils){
 	    		if(p[0]=='') url = (CONTEXT_PATH + path.slice(1));
 	    		else url = (RESOURCE_PATH + path);
 	    	} else return false;
-	    	return { url : url, module : p[p.length-1].replace(/([\w]+)\.js$|.css$/, "$1")}
+	    	return { url : url, module : p[p.length-1].replace(/([\w]+)\.js$|.css$/, "$1"),
+	    		isJS : isJS, isCSS : isCSS }
 	    };
 	    files.setResourcePath = function(path){
 	    	this.rpath = path;
 	    };
-	    files.loadJS = function(js){
-	    	files.load(RESOURCE_PATH  + js);
+	    files.loadJSFile = function(js){
+	        $('head').append('<script src="' + js + '" type="text/javascript"></script>');
 	    };
-	    files.load = function(js){
-	        $('head').append('<script src="' + js + '" onload="utils_files_resolve()" type="text/javascript"></script>');
+	    files.loadCSSFile = function(css){
+	        $('head').append('<link href="' + css + '" type="text/css" rel=stylesheet></link>');
 	    };
-	    files.loadJS = function() {
-	    	var file,list=[],cb;
-	    	var first = arguments[0];
+	    files.loadFiles = function() {
+	    	var args, jslist=[],csslist=[],cb;
 	    	if(typeof arguments[0] === 'string'){
-	    		for (var j = 0; j < arguments.length; j++){
-	    			if(!utils._FILES_[arguments[j]])
-	    				list.push(arguments[j]);
-    			}
+	    		args = arguments;
 	    	} else if($.isArray(arguments[0])){
-	    		for (var j = 0; j < arguments[0].length; j++){
-	    			if(!utils._FILES_[arguments[0][j]])
-	    				list.push(arguments[0][j]);
-    			}
+	    		args = arguments[0];
 	    		if(arguments[1] && typeof arguments[1]=='function'){
 	    			cb = arguments[1];
 	    		}
 	    	}
-	    	if(COMBINEJS){
+	    	for (var j = 0; j < args.length; j++){
+	    		if(!utils._FILES_[args[j]]){
+	    			if(args[j].endsWith('.css'))
+	    				csslist.push(args[j]);
+	    			else jslist.push(args[j]);
+	    		}
+	    	}
+	    	files.loadJs(jslist,cb);
+	    	files.loadCss(csslist,cb);
+	    };
+	    files.loadJs = function(list,cb){
+	    	if(COMBINEJS && list.length){
 	    		$.ajax({
 	    			async: false,
 	    			url: RESOURCE_PATH + 'combine.js?@='+list.join(','),
@@ -308,13 +316,32 @@ window.utils = function(utils){
 	    				for(var i in list){
 	    					utils._FILES_[list[i]] = list[i];
 	    				}
-	    				cb && cb();
+	    				if(cb) cb();
 	    			}
 	    		});
 	    	} else {
-	    		//files.load(file);
 	    		for(var i in list){
-	    			files.load(list[i]);
+	    			files.loadJSFile(list[i]);
+	    			utils._FILES_[list[i]] = list[i];
+	    		}
+	    	} 
+	    };
+	    files.loadCss = function(list,cb){
+	    	if(COMBINEJS && list.length){
+	    		$.ajax({
+	    			async: true,
+	    			url: RESOURCE_PATH + 'combine.css?@='+list.join(','),
+	    			//dataType: "script",
+	    			complete : function(){
+	    				for(var i in list){
+	    					utils._FILES_[list[i]] = list[i];
+	    				}
+	    				if(cb) cb();
+	    			}
+	    		});
+	    	} else {
+	    		for(var i in list){
+	    			files.loadCSSFile(list[i]);
 	    			utils._FILES_[list[i]] = list[i];
 	    		}
 	    	} 
