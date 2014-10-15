@@ -21,11 +21,12 @@ utils.define('utils.template', function(template,_in_) {
 				data : THIS.params,
 				success : function(msg){
 					THIS.$div = $(msg);
-					if(THIS.$parent && THIS.replace) THIS.$parent.html(THIS.$div);
-					else if(THIS.$parent)  THIS.$parent.append(THIS.$div);
-					if(THIS.isModal){
+					if(!THIS.isModal){
+						if(THIS.$parent && THIS.replace) THIS.$parent.html(THIS.$div);
+						else if(THIS.$parent)  THIS.$parent.append(THIS.$div);
+					} else if(THIS.isModal){
 						THIS.$div.addClass('modal fade in').show();
-						THIS.$parent.append(THIS.$overlay);
+						(THIS.$parent || template.$body).append(THIS.$div).append(THIS.$overlay);
 					}
 					if(cb) cb();
 				},
@@ -41,8 +42,9 @@ utils.define('utils.template', function(template,_in_) {
 	};
 	
 	template._ready_ = function(){
+		this.$body = $('body');
 		this.bodyTemplate = this.load({
-			$div : $('body') 
+			$div : this.$body 
 		});
 	}
 	

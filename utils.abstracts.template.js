@@ -105,8 +105,11 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	_instance_.get = function(a,b,c,d){
 		return this.data.get(a,b,c,d);
 	};
-	_instance_._onchange_ = function(dPath,dValue){
-		return null;
+	_instance_._onchange_ = function(details,event){
+		return false;
+	};
+	_instance_._onclick_ = function(details,event){
+		return false;
 	};
 	_instance_._datachange_ = function(dPath,dValue){
 		return null;

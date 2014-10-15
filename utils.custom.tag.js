@@ -27,11 +27,16 @@ utils.define('utils.custom.tag', function(tag) {
 			tagParams.isValid = custom.validate($tag,tagParams);
 			custom.dispatchEvent(this,tag.EVENTS.value_change,tagParams);
 		});
-		$("body").on("click", "[data-onclick]", function(e) {
+		$("body").on("click", "["+tag.ATTR.DATA_ONCLICK+"]", function(e) {
 			var $tag = $(this); // .parents('.tag');
-			custom.dispatchEvent(this,tag.EVENTS.buton_click,{
-				isValid : valid
-			});
+			var tagType = $tag.attr('tagType');
+			var tagParams;
+			if(utils.custom[tagType] && utils.custom[tagType].getTagParam){
+				tagParams = utils.custom[tagType].getTagParam($tag);
+			} else {
+				tagParams = tag.getTagParam($tag);
+			}
+			custom.dispatchEvent(this,tag.EVENTS.buton_click,tagParams);
 		});
 		
 		$.fn.setValue = function(value){
