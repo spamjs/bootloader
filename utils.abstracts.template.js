@@ -1,4 +1,5 @@
 utils.define('utils.abstracts.template', function(template,_instance_) {
+	utils.require('utils.custom','utils.odo','utils.custom.tag','utils.template');
 	var custom = utils.require('utils.custom');
 	var odo = utils.require('utils.odo');
 	var tag = utils.require('utils.custom.tag');
@@ -15,6 +16,9 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 		delete obj.data;
 		for(var prop in obj){
 			THIS[prop] =  obj[prop];
+		}
+		if(THIS.isModal){
+			THIS.$overlay = THIS.$overlay || $('<div class="modal-backdrop fade in"/>');
 		}
 		return _template.loadHTML(THIS,function(){
 			THIS._bindDomEvents_();

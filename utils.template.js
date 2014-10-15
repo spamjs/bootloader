@@ -23,6 +23,10 @@ utils.define('utils.template', function(template,_in_) {
 					THIS.$div = $(msg);
 					if(THIS.$parent && THIS.replace) THIS.$parent.html(THIS.$div);
 					else if(THIS.$parent)  THIS.$parent.append(THIS.$div);
+					if(THIS.isModal){
+						THIS.$div.addClass('modal fade in').show();
+						THIS.$parent.append(THIS.$overlay);
+					}
 					if(cb) cb();
 				},
 				error : function(msg) {
