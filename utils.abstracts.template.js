@@ -27,16 +27,33 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	_instance_._bindDomEvents_ = function(){
 		if(this.$div){
 			var THAT = this;
-			THAT.$div.on('TagOnChange',function(e){
+			THAT.$div.on(tag.EVENTS.value_change,function(e){
 				var $tag = $(e.target);
+				var propagate = false;
 				if(!$tag.hasClass('disabled')){
 					var detail = custom.getEventDetail(e);
 					if(detail.isValid){
-						var value = $tag.getValue();
-						THAT.data.change(detail.path,value);
-						THAT._onchange_(detail.path,value);
+						detail.iVal = $tag.getValue();
+						THAT.data.change(detail.path,detail.iVal);
+						if(!(detail.fieldType && THAT[detail.fieldType + "_onchange"])
+								|| THAT[detail.fieldType + "_onchange"](detail,$tag)){
+							propagate = THAT._onchange_(detail,$tag);
+						}
 					}
 				}
+				if(!propagate) utils.preventPropagation(e);
+			});
+			THAT.$div.on(tag.EVENTS.buton_click,function(e){
+				var $tag = $(e.target);
+				var propagate = false;
+				if(!$tag.hasClass('disabled')){
+					var detail = custom.getEventDetail(e);
+					if(!(detail.fieldType && THAT[detail.fieldType + "_onclick"])
+							|| THAT[detail.fieldType + "_onclick"](detail,$tag)){
+						propagate = THAT._onclick_(detail,$tag);
+					}
+				}
+				if(!propagate) utils.preventPropagation(e);
 			});
 		}
 	};
@@ -48,13 +65,13 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 				if(dEvent.value && dEvent.value._tag_){
 					 isTag = true;
 				}
-				$("[" + tag.DATA_PATH + "='"+dEvent.path+"']", THAT.$div).each(function() {
-					var $tag = $(this), param = $tag.attr(tag.DATA_PATH);
+				$("[" + tag.ATTR.DATA_PATH + "='"+dEvent.path+"']", THAT.$div).each(function() {
+					var $tag = $(this), param = $tag.attr(tag.ATTR.DATA_PATH);
 					if($tag.hasClass('tag')){
 						if(isTag) $tag.setData(dEvent.value);
 						else $tag.setValue(dEvent.value);
 					} else {
-						var formatter = $tag.attr(tag.DATA_FORMAT);
+						var formatter = $tag.attr(tag.ATTR.DATA_FORMAT);
 						if(formatter && THAT[formatter]){
 							var __value = THAT[formatter](_value,$tag)
 							if(__value!==undefined){
@@ -69,7 +86,6 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 			});
 		}
 	};
-	
 	// Properties per template instance
 	_instance_.update = function(dData){
 		return this.data.update(dData);

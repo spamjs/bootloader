@@ -10,7 +10,7 @@ utils.define('utils.template', function(template,_in_) {
 		return utils.require(obj.name || 'utils.abstracts.template').instance(obj);
 	};
 	template.loadHTML = function(THIS,cb) {
-		if(!THIS.$div){
+		if(!THIS.$div && THIS.handler!=undefined){
 			$.ajax({
 				datatype : "html",
 				url: "/"+utils.config.contextPath+"/template/" + THIS.handler + "?"+decodeURIComponent($.param({
@@ -37,7 +37,7 @@ utils.define('utils.template', function(template,_in_) {
 	};
 	
 	template._ready_ = function(){
-		this.main = this.load({
+		this.bodyTemplate = this.load({
 			$div : $('body') 
 		});
 	}
