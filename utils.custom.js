@@ -15,12 +15,9 @@ utils.define('utils.custom', function(custom) {
 	custom.dispatchEvent = function(elem,eName,eData){
 		return elem.dispatchEvent(custom.getEvent(eName,eData));
 	};
-	custom.validate = function($tag) {
-		var formatType = $tag.attr('formatType');
-		if (formatType) {
-			var o = utils.format.get(formatType, {
-				iVal : $tag.val()
-			});
+	custom.validate = function($tag,tagParams) {
+		if (tagParams.formatType) {
+			var o = utils.format.get(tagParams.formatType, tagParams);
 			custom.setError($tag, !o.isValid)
 			return o.isValid;
 		} return true;

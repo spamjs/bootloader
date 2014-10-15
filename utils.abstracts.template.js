@@ -4,10 +4,6 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	var tag = utils.require('utils.custom.tag');
 	var _template = utils.require('utils.template');
 
-	var DATA_PATH = 'data-path';
-	var DATA_ONCHANGE = 'data-onchange';
-	var DATA_FORMAT = 'data-format';
-	
 	template._instance_ = function(obj){
 		if(!obj) return;
 		template._create_template_(this,obj);
@@ -36,9 +32,6 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 				if(!$tag.hasClass('disabled')){
 					var detail = custom.getEventDetail(e);
 					if(detail.isValid){
-						detail.fieldType =  $tag.attr('name') || $tag.attr('fieldType');
-						detail.path = $tag.attr(DATA_PATH);
-						detail.change = $tag.attr(DATA_ONCHANGE);
 						var value = $tag.getValue();
 						THAT.data.change(detail.path,value);
 						THAT._onchange_(detail.path,value);
@@ -55,13 +48,13 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 				if(dEvent.value && dEvent.value._tag_){
 					 isTag = true;
 				}
-				$("[" + DATA_PATH + "='"+dEvent.path+"']", THAT.$div).each(function() {
-					var $tag = $(this), param = $tag.attr(DATA_PATH);
+				$("[" + tag.DATA_PATH + "='"+dEvent.path+"']", THAT.$div).each(function() {
+					var $tag = $(this), param = $tag.attr(tag.DATA_PATH);
 					if($tag.hasClass('tag')){
 						if(isTag) $tag.setData(dEvent.value);
 						else $tag.setValue(dEvent.value);
 					} else {
-						var formatter = $tag.attr(DATA_FORMAT);
+						var formatter = $tag.attr(tag.DATA_FORMAT);
 						if(formatter && THAT[formatter]){
 							var __value = THAT[formatter](_value,$tag)
 							if(__value!==undefined){
