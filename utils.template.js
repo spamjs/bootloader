@@ -35,4 +35,11 @@ utils.define('utils.template', function(template,_in_) {
 		}
 		return THIS;
 	};
+	
+	template._ready_ = function(){
+		this.main = this.load({
+			$div : $('body') 
+		});
+	}
+	
 });
