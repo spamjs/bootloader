@@ -4,7 +4,8 @@ utils.define('utils.custom.tag', function(tag) {
 	tag.ATTR = $.extend({
 		DATA_PATH : 'data-path',
 		DATA_ONCHANGE : 'data-onchange',
-		DATA_FORMAT : 'data-format'
+		DATA_FORMAT : 'data-format',
+		DATA_ONCLICK : 'data-onclick'
 	},utils.config.TAG_ATTR);
 	
 	tag.EVENTS = $.extend({
@@ -48,7 +49,8 @@ utils.define('utils.custom.tag', function(tag) {
 		 return { 
 			 fieldType :  $tag.attr('name') || $tag.attr('fieldType'),
 			 path : $tag.attr(tag.ATTR.DATA_PATH),
-			 change : $tag.attr(tag.ATTR.DATA_ONCHANGE),
+			 method_onchange : $tag.attr(tag.ATTR.DATA_ONCHANGE),
+			 method_onclick : $tag.attr(tag.ATTR.DATA_ONCLICK),
 			 iVal : $tag.getValue()
 		 };
 	 };

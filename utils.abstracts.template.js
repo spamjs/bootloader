@@ -41,9 +41,12 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 					if(detail.isValid){
 						detail.iVal = $tag.getValue();
 						THAT.data.change(detail.path,detail.iVal);
-						if(!(detail.fieldType && THAT[detail.fieldType + "_onchange"])
-								|| THAT[detail.fieldType + "_onchange"](detail,$tag)){
-							propagate = THAT._onchange_(detail,$tag);
+						if(!(detail.method_onchange && THAT[detail.method_onchange])
+								|| THAT[detail.method_onchange](detail,$tag)){
+							if(!(detail.fieldType && THAT[detail.fieldType + "_onchange"])
+									|| THAT[detail.fieldType + "_onchange"](detail,$tag)){
+								propagate = THAT._onchange_(detail,$tag);
+							}
 						}
 					}
 				}
@@ -54,9 +57,12 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 				var propagate = false;
 				if(!$tag.hasClass('disabled')){
 					var detail = custom.getEventDetail(e);
-					if(!(detail.fieldType && THAT[detail.fieldType + "_onclick"])
-							|| THAT[detail.fieldType + "_onclick"](detail,$tag)){
-						propagate = THAT._onclick_(detail,$tag);
+					if(!(detail.method_onclick && THAT[detail.method_onclick])
+							|| THAT[detail.method_onclick](detail,$tag)){
+						if(!(detail.fieldType && THAT[detail.fieldType + "_onclick"])
+								|| THAT[detail.fieldType + "_onclick"](detail,$tag)){
+							propagate = THAT._onclick_(detail,$tag);
+						}
 					}
 				}
 				if(!propagate) utils.preventPropagation(e);
