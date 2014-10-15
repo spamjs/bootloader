@@ -1,5 +1,7 @@
 utils.define('utils.abstracts.template', function(template,_instance_) {
+	
 	utils.require('utils.custom','utils.odo','utils.custom.tag','utils.template');
+	
 	var custom = utils.require('utils.custom');
 	var odo = utils.require('utils.odo');
 	var tag = utils.require('utils.custom.tag');
