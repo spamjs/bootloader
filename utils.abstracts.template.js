@@ -114,6 +114,14 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	_instance_._datachange_ = function(dPath,dValue){
 		return null;
 	};
+	_instance_.dismiss = function(){
+		if(this.onClose) this.onClose();
+		if(this.$div) this.$div.remove();
+		if(this.$overlay){
+			this.$overlay.remove();
+			delete this.$overlay;
+		}
+	};
 	_instance_.sub = function(dPath,listner){
 		if(dPath=='*') return this._datachange_ = listner;
 		return this.data.sub(dPath,listner);
