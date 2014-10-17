@@ -1,11 +1,12 @@
 utils.define('utils.abstracts.template', function(template,_instance_) {
 	
-	utils.require('utils.custom','utils.odo','utils.custom.tag','utils.template');
+	utils.require('utils.custom','utils.odo','utils.custom.tag','utils.template','utils.json');
 	
 	var custom = utils.require('utils.custom');
 	var odo = utils.require('utils.odo');
 	var tag = utils.require('utils.custom.tag');
 	var _template = utils.require('utils.template');
+	var json = utils.require('utils.json');
 
 	template._instance_ = function(obj){
 		if(!obj) return;
@@ -26,6 +27,8 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 			THIS._bindDomEvents_();
 			THIS._bindDataEvents_();
 			THIS.data.update(data);
+			var serverData = json.parse($('#page_json',THIS.$div).attr('data-value')) || {};
+			THIS.data.update(serverData);
 			if(THIS._ready_) THIS._ready_();
 			if(THIS._ready__) THIS._ready__();
 		});
