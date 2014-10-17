@@ -23,12 +23,11 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 		if(THIS.isModal){
 			THIS.$overlay = THIS.$overlay || $('<div class="modal-backdrop fade in"/>');
 		}
-		return _template.loadHTML(THIS,function(){
+		return _template.loadHTML(THIS,function(serverData){
 			THIS._bindDomEvents_();
 			THIS._bindDataEvents_();
 			THIS.data.update(data);
-			var serverData = json.parse($('#page_json',THIS.$div).attr('data-value')) || {};
-			THIS.data.update(serverData);
+			if(serverData) THIS.data.update(serverData);
 			if(THIS._ready_) THIS._ready_();
 			if(THIS._ready__) THIS._ready__();
 		});
