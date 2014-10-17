@@ -32,7 +32,7 @@ utils.define('utils.template', function(template,_in_) {
 			} else {
 				$.ajax({
 					datatype : "html",
-					url: "/"+utils.config.contextPath+"/template/" + URL,
+					url: utils.config.contextPath+"template/" + URL,
 					type : 'GET',
 					data : THIS.params,
 					success : function(msg){

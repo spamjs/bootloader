@@ -369,6 +369,7 @@ window.utils = function(utils){
 					}
 				}
 			}
+			config.contextPath = CONTEXT_PATH;
 			delete _config.moduleDir;
 			for(var i in config){
 				_config[i]= config[i];
