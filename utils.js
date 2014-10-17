@@ -83,10 +83,16 @@ window.utils = function(utils){
 						extendProto(this._instance_,this._parent_);
 					}
 					if(this._execute_) this._execute_();
-					var that = this;
-					utils.ready(function(){
-						if(that._ready_) that._ready_();
-					});
+					if(this._ready_){
+						var that = this;
+						utils.ready(function(){
+							try{
+								if(that._ready_) that._ready_();
+							} catch (e){
+								console.error(that.module+"._ready_:exception ",e);
+							}
+						});
+					}
 				} else throw new Error('module can have only one definition')
 				return this;
 			},

@@ -1,4 +1,4 @@
-utils.define('utils.custom.tag', function(tag) {
+utils.define('utils.custom.tag').as(function(tag,_tag_) {
 
 	var custom = utils.require('utils.custom');
 	tag.ATTR = $.extend({
@@ -38,7 +38,6 @@ utils.define('utils.custom.tag', function(tag) {
 			}
 			custom.dispatchEvent(this,tag.EVENTS.buton_click,tagParams);
 		});
-		
 		$.fn.setValue = function(value){
 			if(this[0].tagName=='INPUT' || this[0].tagName=='SELECT'){
 				this[0].value = value
@@ -49,7 +48,6 @@ utils.define('utils.custom.tag', function(tag) {
 			return $(this).val();
 		};
 	};
-	
 	 tag.getTagParam = function($tag){
 		 return { 
 			 fieldType :  $tag.attr('name') || $tag.attr('fieldType'),
@@ -59,5 +57,4 @@ utils.define('utils.custom.tag', function(tag) {
 			 iVal : $tag.getValue()
 		 };
 	 };
-	
 });
