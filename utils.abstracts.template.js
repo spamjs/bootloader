@@ -23,13 +23,40 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 		if(THIS.isModal){
 			THIS.$overlay = THIS.$overlay || $('<div class="modal-backdrop fade in"/>');
 		}
+		return template._create_template_html(THIS,data);
+	};
+	template._create_template_html = function(THIS,_data,cb){
+		console.info(THIS)
+		THIS.$parent = THIS.$parent || $('<div/>').appendTo(_template.$body);
 		return _template.loadHTML(THIS,function(serverData){
 			THIS._bindDomEvents_();
 			THIS._bindDataEvents_();
-			THIS.data.update(data);
+			THIS.data.update(_data,serverData);
 			if(serverData) THIS.data.update(serverData);
 			if(THIS._ready_) THIS._ready_();
 			if(THIS._ready__) THIS._ready__();
+			if(cb) cb();
+		});
+	};
+	_instance_.reload = function(obj){
+		var obj = obj || {};
+		var data = obj.data || {};
+		delete obj.data;
+		for(var prop in obj){
+			this[prop] =  obj[prop];
+		}
+		var $div = this.$div; 
+		this.$div =null;
+		//var $overlay = this.$overlay; this.$overlay = null;
+		//var isModal = this.isModal; this.isModal = false;
+		var THIS = this;
+		var replace = THIS.replace; THIS.replace =true; 
+		//this.setOptions(_OBJ);
+		return template._create_template_html(THIS,data,function(){
+			//THIS.isModal = isModal;
+			//THIS.$overlay = $overlay;
+			THIS.replace = replace;
+			$div.remove();
 		});
 	};
 	_instance_._bindDomEvents_ = function(){

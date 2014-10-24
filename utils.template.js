@@ -1,5 +1,6 @@
 utils.define('utils.template', function(template,_in_) {
 	
+	var json = utils.require('utils.json');
 	template.PENDING_TEMP = {};
 	template.CACHE = {};
 	//template.Q = utils.queue();
@@ -41,7 +42,7 @@ utils.define('utils.template', function(template,_in_) {
 								html : msgs[0], data : msgs[1]
 						}
 						THIS.$div = $(msgs[0]);
-						template.onDomReady(THIS,cb,msgs[1]);
+						template.onDomReady(THIS,cb,json.parse(msgs[1]));
 					},
 					error : function(msg) {
 						console.log('error', msg);
