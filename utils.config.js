@@ -6,6 +6,6 @@ utils.config.set({
 		'dff.*' : 'dff/models/',
 		'utils.*' : '../libs/jqgeeks/utils/'
 	},
-	template : 'folader',
+	template : 'folder',
 	combine : true,
 });
