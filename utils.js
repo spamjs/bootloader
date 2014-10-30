@@ -27,7 +27,7 @@ window.utils = function(utils){
 		if(!MODULE_MAP[fromString]){
 			if(true && MODULE_PENDING[fromString]){
 				MODULE_CB.push(function(){
-					return extendClass(defObj,fromString);
+					return extendClass(defObj,fromString,dummyProto);
 				})
 				defObj.waiting = true;
 				return defObj;
@@ -38,7 +38,7 @@ window.utils = function(utils){
 		}
 		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._def_){
 			if(MODULE_MAP[fromString]._parent_){
-				extendClass(defObj,MODULE_MAP[fromString]._parent_);
+				extendClass(defObj,MODULE_MAP[fromString]._parent_,dummyProto);
 			}
 			MODULE_MAP[fromString]._def_(defObj,dummyProto);
 			defObj._hasExtened_[fromString] = true;
@@ -52,7 +52,9 @@ window.utils = function(utils){
 	var extendProto = function(cons,fromString){
 		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._instance_){
 			var _proto_ = cons.prototype;
+			//console.info(utils.status.start(),'extendProto',fromString)
 			cons.prototype = MODULE_MAP[fromString].instance();
+			//console.info(utils.status.done(),'extendProtoDone',fromString)
 			for(var prop in _proto_){
 				cons.prototype[prop] = _proto_[prop];
 			}
@@ -72,15 +74,20 @@ window.utils = function(utils){
 				if(!this._def_ ){
 					this._def_ = _def_;
 					var _protos_ = {};
+					//console.info(utils.status.start(),"ASTART",this.module,this._parent_,_protos_)
 					try	{
 						this._def_(this,_protos_);
 					} catch (e){
 						console.warn(this.module,e);
 					}
-					if(!this._instance_) this._instance_ = function(){};
+					if(!this._instance_) this._instance_ = function(){
+						console.info('no function...')
+					};
 					if(typeof this._instance_ === 'function'){
 						this._instance_.prototype = _protos_;
+						//console.info(utils.status.start(),"xpro",this.module,this._parent_)
 						extendProto(this._instance_,this._parent_);
+						//console.info(utils.status.done(),"xpro",this.module,this._parent_)
 					}
 					if(this._execute_) this._execute_();
 					if(this._ready_){
@@ -93,6 +100,7 @@ window.utils = function(utils){
 							}
 						});
 					}
+					//console.info(utils.status.done(),"ASDONE",this.module,this._parent_)
 				} else throw new Error('module can have only one definition')
 				return this;
 			},
@@ -107,12 +115,22 @@ window.utils = function(utils){
 				return MODULE_MAP[this._parent_];
 			},
 			instance : function(a,b,c,d,e,f,g,h){
+				//console.info(utils.status.start(),'.instance...',this.module,a,b,c,d,e,f,g,h);
 				if(this._instance_){
-					var _instance_ = this._instance_;
-					var newInst = new _instance_(a,b,c,d,e,f,g,h);
-					if(newInst._create_) newInst._create_();
-					return newInst;
+					var __instance__ = this._instance_;
+					//console.info(utils.status.start(),'_instance_Exists',__instance__);
+					try{
+						//console.info(utils.status.start(),this.module,'NEW_instance_Start',__instance__);
+						var newInst = new __instance__(a,b,c,d,e,f,g,h);
+						//console.info(utils.status.done(),this.module,'NEW_instance_Ends',__instance__);
+						if(newInst._create_) newInst._create_();
+						return newInst;
+					} catch (e){
+						console.error(this.module+"._instance_:exception ",e);
+					}
+					//console.info(utils.status.done(),'_instance_Exists',__instance__);
 				}
+				//console.info(utils.status.done(),'.instance...',this.module,a,b,c,d,e,f,g,h);
 			}
 		};
 	}
@@ -127,38 +145,43 @@ window.utils = function(utils){
 	};
 	
 	utils.define = function(classPath,asFun){
-		//console.log(classPath,asFun)
-		if(!classPath){
-			/**
-			 * If classPath is not given then 'anonymous' module should be created
-			 * and returned to caller, it will not have
-			 * any global identity, referring to it.
-			 */
-			return getModule('anonymous');
-			
-		} else if(typeof classPath=='string'){
-			/**
-			 * If classPath is given and is actually a package name then
-			 * module is created in global namespace and returned to caller.
-			 */
-			if(!MODULE_MAP[classPath] || !MODULE_MAP[classPath]._def_) {
-				var nspace = classPath.split('.');
-				var win = window;
-				var retspace = nspace[0];
-				for(var i =0; i<nspace.length-1; i++){
-					if (!win[nspace[i]]) win[nspace[i]] = {};
-					retspace = nspace[i];
-					win = win[retspace];
+		//console.info(classPath,asFun)
+		try{
+			if(!classPath){
+				/**
+				 * If classPath is not given then 'anonymous' module should be created
+				 * and returned to caller, it will not have
+				 * any global identity, referring to it.
+				 */
+				return getModule('anonymous');
+				
+			} else if(typeof classPath=='string'){
+				/**
+				 * If classPath is given and is actually a package name then
+				 * module is created in global namespace and returned to caller.
+				 */
+				if(!MODULE_MAP[classPath] || !MODULE_MAP[classPath]._def_) {
+					var nspace = classPath.split('.');
+					var win = window;
+					var retspace = nspace[0];
+					for(var i =0; i<nspace.length-1; i++){
+						if (!win[nspace[i]]) win[nspace[i]] = {};
+						retspace = nspace[i];
+						win = win[retspace];
+					}
+					MODULE_MAP[classPath] = win[nspace[nspace.length-1]] = getModule(classPath);
+				} //else throw new Error("Cannot redefine "+classPath + " as it already exists");
+				if(MODULE_MAP[classPath] && asFun && typeof asFun == 'function'){
+					MODULE_MAP[classPath].as(asFun);
+					//console.log('classPath',classPath)
 				}
-				MODULE_MAP[classPath] = win[nspace[nspace.length-1]] = getModule(classPath);
-			} //else throw new Error("Cannot redefine "+classPath + " as it already exists");
-			if(MODULE_MAP[classPath] && asFun && typeof asFun == 'function'){
-				MODULE_MAP[classPath].as(asFun);
-				//console.log('classPath',classPath)
+				//console.info('returning',classPath)
+				return MODULE_MAP[classPath] ;
+			} else if(typeof classPath=='function'){
+				return getModule('anonymous').as(classPath);
 			}
-			return MODULE_MAP[classPath] ;
-		} else if(typeof classPath=='function'){
-			return getModule('anonymous').as(classPath);
+		} catch (e){
+			console.error("e",e);
 		}
 	};
 	
@@ -383,6 +406,11 @@ window.utils = function(utils){
 		}
 		return _config;
 	}({});
+	utils.status = {
+			me  : "=",
+			start : function(){ var x =this.me; this.me+="="; return x;},
+			done : function(){ this.me = this.me.replace('=','');return this.me;}
+	}
 	utils.ready = function(cb){
 		return $(document).ready(cb);
 	}

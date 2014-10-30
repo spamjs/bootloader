@@ -38,6 +38,7 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 			if(cb) cb();
 		});
 	};
+
 	_instance_.reload = function(obj){
 		var obj = obj || {};
 		var data = obj.data || {};
@@ -59,6 +60,7 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 			$div.remove();
 		});
 	};
+	
 	_instance_._bindDomEvents_ = function(){
 		if(this.$div){
 			var THAT = this;
@@ -165,6 +167,10 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 			return this.$div.on(dPath, dPathListner,listner);
 		}
 	};
+	_instance_.$ = _instance_.find = function(selector,context){
+		return $(selector,context || this.$div);
+	};
+	
 	_instance_.onReady = function(_ready_){
 		this._ready__ = _ready_; return this;
 	};
