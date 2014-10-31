@@ -170,8 +170,13 @@ utils.define('utils.abstracts.template', function(template,_instance_) {
 	_instance_.$ = _instance_.find = function(selector,context){
 		return $(selector,context || this.$div);
 	};
-	
 	_instance_.onReady = function(_ready_){
 		this._ready__ = _ready_; return this;
+	};
+	_instance_.remove = function(){
+		this.$div.remove();
+		for(var prop in this){
+			if(typeof this[prop] !=="function") delete this[prop];
+		}
 	};
 });
