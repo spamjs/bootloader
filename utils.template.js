@@ -37,12 +37,13 @@ utils.define('utils.template', function(template,_in_) {
 					type : 'GET',
 					data : THIS.params,
 					success : function(msg){
-						var msgs = msg.split('::rx::data::');
+						var msgs = msg.split('<rx::data/>');
 						if(THIS.cache) template.CACHE[URL] = {
-								html : msgs[0], data : msgs[1]
+								html : msgs[0], data : msgs[2]
 						}
 						THIS.$div = $(msgs[0]);
-						template.onDomReady(THIS,cb,json.parse(msgs[1]));
+						template.onDomReady(THIS,cb,json.parse(msgs[2]));
+						template.$scripts.append(msgs[1]);
 					},
 					error : function(msg) {
 						console.log('error', msg);
@@ -61,6 +62,7 @@ utils.define('utils.template', function(template,_in_) {
 		this.page = this.load({
 			$div : this.$body 
 		});//.onReady(function(){
+			this.$scripts = $('#script_logs');
 			var $json_div = $('#page_json',template.page.$div);
 			var serverData = utils.json.parse($json_div.attr('data-value')) || {};
 			template.page.update(serverData);
