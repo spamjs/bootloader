@@ -459,7 +459,7 @@ utils.define('utils.url', function(url) {
 		return (data[index]);
 	};
 	url.push = function(pageUrl){
-		return;
+		console.log(pageUrl)
 		return window.history.pushState({ path: pageUrl }, '', pageUrl);
 	};
 	url.clean = function(url){
