@@ -3,6 +3,7 @@ utils.define('utils.template', function(template,_in_) {
 	var json = utils.require('utils.json');
 	template.PENDING_TEMP = {};
 	template.CACHE = {};
+	var TEMP_DELIMITER = '<rx::data/>';
 	//template.Q = utils.queue();
 	//For backword compatibility
 	template.define = function(tname,cb){
@@ -37,7 +38,7 @@ utils.define('utils.template', function(template,_in_) {
 					type : 'GET',
 					data : THIS.params,
 					success : function(msg){
-						var msgs = msg.split('<rx::data/>');
+						var msgs = msg.split(TEMP_DELIMITER);
 						if(THIS.cache) template.CACHE[URL] = {
 								html : msgs[0], data : msgs[2]
 						}
