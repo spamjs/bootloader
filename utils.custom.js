@@ -12,6 +12,13 @@ utils.define('utils.custom', function(custom) {
 	custom.getEventDetail = function(event) {
 		return event.originalEvent.detail;
 	};
+	custom.getEventInfo = function(elem,jQEvent,uE) {
+		if(uE) jQEvent.uE = $.extend(jQEvent.uE||{},info);
+		uE.name = uE.name ||  jQEvent.type;
+		uE.$widget = uE.$widget || $(elem);
+		uE.key = uE.key || (e.keyCode || e.which),
+		return jQEvent.uE;
+	};
 	custom.dispatchEvent = function(elem,eName,eData){
 		return elem.dispatchEvent(custom.getEvent(eName,eData));
 	};
