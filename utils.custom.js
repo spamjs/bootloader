@@ -2,7 +2,10 @@ utils.define('utils.custom', function(custom) {
 
 	utils.require('utils.browser','utils.format');
 	
-	custom.getEvent = function(eName, detail) {
+	custom.getEvent = function(eName, _detail) {
+		var detail = _detail || {};
+		detail.navigate = true;
+		detail.uEventName = eName;
 		return new CustomEvent(eName, {
 			detail : detail,
 			bubbles : true,
@@ -10,14 +13,14 @@ utils.define('utils.custom', function(custom) {
 		});
 	};
 	custom.getEventDetail = function(event) {
+		if(event.uEvent) return event.uEvent.detail
 		return event.originalEvent.detail;
 	};
-	custom.getEventInfo = function(elem,jQEvent,uE) {
-		if(uE) jQEvent.uE = $.extend(jQEvent.uE||{},info);
-		uE.name = uE.name ||  jQEvent.type;
-		uE.$widget = uE.$widget || $(elem);
-		uE.key = uE.key || (e.keyCode || e.which),
-		return jQEvent.uE;
+	custom.extendEvent = function(jQEvent,eName,_eData) {
+		var eData = _eData || {};
+		eData.key = (jQEvent.keyCode || jQEvent.which);
+		jQEvent.uEvent = custom.getEvent(eName,eData);
+		return jQEvent.uEvent;
 	};
 	custom.dispatchEvent = function(elem,eName,eData){
 		return elem.dispatchEvent(custom.getEvent(eName,eData));
@@ -39,12 +42,10 @@ utils.define('utils.custom', function(custom) {
 		if (set)
 			$tagwrap.addClass('has-error');
 	};
-	custom.preventPropagation = function(event) {
+	custom.stop = custom.preventPropagation = function(event) {
 		return utils.preventPropagation(event);
 	};
 	
 	//NAVIGATION
-	
-	
 	
 });

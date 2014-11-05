@@ -18,6 +18,19 @@ utils.define('utils.browser', function(custom) {
 
 	}
 	
+    if ('querySelector' in document){
+        $.getFirst= function(selector,$c) { 
+            if($c){
+            	if($c[0]) return $($c[0].querySelector(selector))
+            	return $();
+            } return $(document.querySelector(selector))
+        }
+    } else {
+        $.getFirst= function(selector,$c) {  
+            return $(selector,$c).first();
+        }
+    }
+	
 	window.utils.preventPropagation = function(event) {
 		if (!event)
 			var event = window.event;

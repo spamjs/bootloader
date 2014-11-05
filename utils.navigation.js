@@ -1,108 +1,83 @@
 utils.define('utils.navigation').as(function(navigation, _navigation_) {
 
+	utils.require('utils.custom.tag','utils.abstracts.tag');
 	var tag = utils.require('utils.custom.tag');
+	var abstract_tag = utils.require('utils.abstracts.tag');
 	
 	// NAVIGATION**********************************************************************************
-	tag.widget_on_focus = function(elem, uE, e) {
-		return 'select';
-	};
-	tag.widget_on_blur = function(elem, uE, e) {
-		return 'none';
-	};
-	tag.widget_on_keydown = function(elem, uE, e) {
-		if (utils.is.enter(uE.key)) {
-			uE.key = utils.is.down();
-			return 'select';
-		} else if (uE.readOnly)
-			return 'select';
-		else
-			return uE.mode;
-	};
-	tag.widget_on_modechange = function(elem, uE, e) {
-		if (uE.readOnly)
-			return 'select';
-		if (uE.mode != 'select') {
-			uE.stop(e);
-		}
-	};
-	tag.to_mode_change = function(elem,toMode,uE,e){
-		uE._mode = uE.mode; uE.mode = toMode;
-		if(uE._mode!=uE.mode){
-			elem.setAttribute('mode', uE.mode);
-	        if (utils.custom[uE.tagType] && utils.custom[uE.tagType].on_modechange) {
-	            utils.custom[uE.tagType].on_modechange(elem, uE, e);
+	navigation._to_modechange = function(elem,toMode,uE,e){
+		var uD = uE.detail;
+		uD._mode = uD.mode; uD.mode = toMode;
+		console.log("_to_modechange",uE,uD)
+		if(uD._mode!=uD.mode){
+			elem.attr('mode', uD.mode);
+	        if (utils.custom[uD.tagType] && utils.custom[uD.tagType].on_modechange) {
+	            utils.custom[uD.tagType].on_modechange(elem, uE, e);
 	        }
-	        if(!e.uE.navigate){
-	        	//utils.preventPropagation(e);
-	        	//$(elem).focus();
+	        if(!uD.navigate){
 	        	return utils.preventPropagation(e);
 	        }
 		}
 	};
 	
 	navigation._ready_ = function() {
-		console.info("navigation._ready_")
-	    $("body").delegate(".tag", "focusin", function(e) {
-	        var elem = this || e.currentTarget || $(this)[0];
-	        e.uE = new utils.custom.getEvent('focus');
-	        return tag.tagEventHandler(elem,e.uE ,e);
+
+		$("body").delegate(".tag", "focusin", function(e) {
+	    	var $elem = $(this || e.currentTarget);
+	    	var uEvent = utils.custom.extendEvent(e,"focus");
+	        return navigation.tagEventHandler($elem,uEvent ,e);
 	    });
 	    $("body").delegate(".tag", "focusout", function(e) {
-	        var elem = this || e.currentTarget || $(this)[0];
-	        e.uE = new utils.custom.getEvent('blur');
-	        return tag.tagEventHandler(elem,e.uE ,e,'none');
+	    	var $elem = $(this || e.currentTarget);
+	    	var uEvent = utils.custom.extendEvent(e,"blur");
+	        return navigation.tagEventHandler($elem,uEvent ,e,'none');
 	    });
 	    $("body").delegate(".tag", "keydown", function(e) {
-	        var elem = this || e.currentTarget || $(this)[0];
-	        e.uE = utils.custom.getEventInfo(elem,e,{ isKeyDownEvent : true });
-	        return tag.tagEventHandler(elem,e.uE ,e);
+	        var $elem = $(this || e.currentTarget);
+	        var uEvent = utils.custom.extendEvent(e,"keydown",{ isKeyDownEvent : true });
+	        return navigation.tagEventHandler($elem,uEvent,e);
 	    });
 	    $("body").delegate(".navigate", "keydown", function(e) {
-	    	console.info("e",e,e.uE)
-	        if (e && e.uE && e.uE.mode == 'select' && e.uE.navigate) {
+	    	var uD = utils.custom.getEventDetail(e);
+	        if (uD && uD.mode == 'select' && uD.navigate) {
 	            var $nav = $(this);
-	            if(window.dffKey) return;
-	            var isNext = tag.next($nav,e.uE,e);
-	            console.info(isNext)
-	            if(isNext!=null) e.uE.stop(e)
+	            var isNext = navigation.next_tag($nav,e.uEvent,e);
+	            if(isNext!=null) utils.preventPropagation(e)
 	        }
 	    });
 	};
 	/*
 	utils.custom.defineWidget.extend(function(wSpace) {
-		wSpace.on_focus = navigation.widget_on_focus;
-	    wSpace.on_blur = navigation.widget_on_blur;
-	    wSpace.on_keydown = navigation.widget_on_keydown;
-	    wSpace.on_modechange = navigation.widget_on_modechange;
-	    wSpace.to_mode_change = navigation.to_mode_change;
+		wSpace.on_focus = navigation._on_focus;
+	    wSpace.on_blur = navigation._on_blur;
+	    wSpace.on_keydown = navigation._on_keydown;
+	    wSpace.on_modechange = navigation._on_modechange;
+	    wSpace._to_modechange = navigation._to_modechange;
 	});*/
 	
-	tag.tagEventHandler = function(elem,uE,e,defaultMode){
-        uE.tagType = elem.getAttribute('tagType') || 'none';
-        uE.mode = elem.getAttribute('mode') || 'none';
-        uE.tagType = elem.getAttribute('tagType') || 'none'
-        uE.readOnly = (uE.$widget ? uE.$widget.hasClass('readOnly') : false);
+	navigation.tagEventHandler = function($tag,uE,e,defaultMode){
+		var uD = tag.getTagParam($tag, uE.detail);
         var newmode = defaultMode || 'select';
-        if(uE.readOnly && e.isKeyDownEvent){
-        	newmode = tag.widget_on_keydown(elem,e.uE ,e)
-        } else if (utils.custom[uE.tagType] && utils.custom[uE.tagType]['on_'+uE.name]) {
+        if(uD.readOnly && uD.isKeyDownEvent){
+        	newmode = abstract_tag._on_keydown($tag,e.uE ,e)
+        } else if (utils.custom[uD.tagType] && utils.custom[uD.tagType]['_on_'+uD.uEventName]) {
         	try{
-        		newmode = utils.custom[uE.tagType]['on_'+uE.name](elem, uE, e) || newmode;
+        		newmode = utils.custom[uD.tagType]['_on_'+uD.uEventName]($tag, uE, e) || newmode;
         	} catch(e){
-        		console.error('eventError:',uE.tagType,uE.name,uE,e)
+        		console.error('eventError:',uD.tagType,uD.uEventName,uE,e)
         	}
-        } return tag.to_mode_change(elem,newmode,uE,e);
+        } return navigation._to_modechange($tag,newmode,uE,e);
 	}
 
-	tag.next = function($nav,uE,e){
-		var $nextField = tag.nav.next(e,uE.$widget,uE.key, $nav);
+	navigation.next_tag = function($nav,uE,e){
+		var $nextField = this.tag.next(e,uE.detail.$tag,uE.detail.key, $nav);
 		if($nextField!==null){
 			$nextField.focus();
 		} 
 		return $nextField;
 	}
 	
-	tag.nav = {
+	navigation.tag = {
 			keyup : function(y){},
 			next : function(e,$curField, key , $context, search){
 				if(!search){
@@ -126,7 +101,7 @@ utils.define('utils.navigation').as(function(navigation, _navigation_) {
 					
 				}
 				
-				var nextField = tag.nav.nextPos(e,key, search.iRow, search.iCol,search.maxRow,search.maxCol,$context.hasClass("rotate"));
+				var nextField = this.nextPos(e,key, search.iRow, search.iCol,search.maxRow,search.maxCol,$context.hasClass("rotate"));
 	
 				if(nextField===null) return nextField;
 				//nextField = "r"+search.iRow+".c"+search.iCol;
@@ -134,7 +109,7 @@ utils.define('utils.navigation').as(function(navigation, _navigation_) {
 				var $nextField = $.getFirst(".r"+nextField.iRow+".c"+nextField.iCol, $context).filter(":visible");
 				//var $nextField = $.getFirst(".r"+nextField.iRow+".c"+nextField.iCol, $context).filter(":visible");
 				if($nextField && $nextField.length==0){
-					return tag.nav.next(e,$curField,key,$context,nextField)
+					return this.next(e,$curField,key,$context,nextField)
 					//return null
 				}
 				return $nextField;

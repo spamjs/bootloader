@@ -53,14 +53,18 @@ utils.define('utils.custom.tag').as(function(tag, _tag_) {
 		var navigation = utils.require('utils.navigation');
 	};
 	//WIDGET*************************************************************************************
-	tag.getTagParam = function($tag) {
-		return {
-			fieldType : $tag.attr('name') || $tag.attr('fieldType'),
-			path : $tag.attr(tag.ATTR.DATA_PATH),
-			method_onchange : $tag.attr(tag.ATTR.DATA_ONCHANGE),
-			method_onclick : $tag.attr(tag.ATTR.DATA_ONCLICK),
-			iVal : $tag.getValue()
-		};
+	tag.getTagParam = function($tag,__def__) {
+		var _def_ = __def__ || {};
+		_def_.$tag = $tag;
+		_def_.tagType = $tag.attr('tagType') || 'none';
+		_def_.mode = $tag.attr('mode') || 'none';
+		_def_.fieldType = $tag.attr('name') || $tag.attr('fieldType') || 'none';
+		_def_.readOnly = ($tag ? $tag.hasClass('readOnly') : false);
+		_def_.path = $tag.attr(tag.ATTR.DATA_PATH);
+		_def_.method_onchange = $tag.attr(tag.ATTR.DATA_ONCHANGE);
+		_def_.method_onclick = $tag.attr(tag.ATTR.DATA_ONCLICK);
+		_def_.iVal = $tag.getValue();
+		return _def_;
 	};
     /**
      * @param $widget - widget, values if being changed for.
