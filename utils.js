@@ -458,8 +458,9 @@ utils.define('utils.url', function(url) {
 		var data = window.location.pathname.split("/");
 		return (data[index]);
 	};
-	url.push = function(pageData = "", pageTitle = "", pageUrl){
-		return window.history.pushState(pageData, pageTitle, pageUrl);
+	url.push = function(pageData, pageTitle, pageUrl){
+		console.info("pushState",pageData,pageUrl);
+		return window.history.pushState(pageData || null, pageTitle || null, pageUrl);
 	};
 	url.clean = function(url){
 		var ars = url.split('/');
