@@ -341,6 +341,7 @@ window.utils = function(utils){
 	    			async: false,
 	    			url: RESOURCE_PATH + 'combine.js?@='+list.join(','),
 	    			dataType: "script",
+	    			cache : true,
 	    			complete : function(){
 	    				for(var i in list){
 	    					utils._FILES_[list[i]] = list[i];
@@ -482,6 +483,3 @@ utils.define('utils.url', function(url) {
 		return domain +  '/'  + parents.join( '/');
 	};
 });
-utils_files_resolve = function(){
-	alert('okaaa');
-}

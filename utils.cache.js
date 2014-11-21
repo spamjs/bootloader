@@ -13,12 +13,14 @@ utils.define('utils.cache', function(cache) {
 		return defaultCache.get(key);
 	};
 	
-	cache._instance_ = function(){
-		this.id = cacheCounter++;
+	cache._instance_ = function(cacheName){
+		this.id = cacheName || cacheCounter++;
 		this.set = function(key,value){
 			return localStorage.setItem(this.id + "#" + key,json.stringify(value));
 		};
-		
+		this.has = function(){
+			return !!localStorage.getItem(this.id + "#"+ key);
+		};
 		this.get = function(key){
 			return json.parse(localStorage.getItem(this.id + "#"+ key));
 		};
