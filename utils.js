@@ -219,7 +219,7 @@ window.utils = function(utils){
 			}
 		}
 		if(pack_list.length){
-			utils.files.loadJSFile('bundle.js?cb=utils.updateBundle&$='
+			utils.files.loadJSFile('resources.json?cb=utils.updateBundle&$='
 					+pack_list.join(','));
 		}
 		var files = [];
@@ -457,7 +457,7 @@ window.utils = function(utils){
 				MODULE_MAP[p.module] = MODULE_MAP[p.module] || {};
 			}
 		}
-		utils.files.loadJSFile(CONTEXT_PATH+'resources.json?cb=utils.updateBundle')
+		utils.files.loadJSFile(CONTEXT_PATH+'resources.json?cb=utils.updateBundle&$=*')
 	});
 	$(document).ready(function(){
 		while(_READY_.length){
