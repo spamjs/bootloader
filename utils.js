@@ -131,17 +131,15 @@ window.utils = function(utils){
 					//console.info(utils.status.done(),'_instance_Exists',__instance__);
 				}
 				//console.info(utils.status.done(),'.instance...',this.module,a,b,c,d,e,f,g,h);
+			},
+			requires : function(){
+				
 			}
 		};
 	}
 	
 	utils.extend = function(fromString){
 		return utils.define().extend(fromString);
-	};
-	
-	utils.module = function(classPath){
-		if(MODULE_MAP[classPath]) return MODULE_MAP[classPath];
-		else return utils.require(classPath);
 	};
 	
 	utils.define = function(classPath,asFun){
@@ -189,7 +187,54 @@ window.utils = function(utils){
 	var CONTEXT_PATH = "/";
 	var RESOURCE_PATH = "/res";
 	var COMBINEJS = true;
-	utils._FILES_ = {};
+	var FILES = { BUNDLES : {}, MODULES : {}, LOADED : {}};
+	
+	var createPackList = function(pack,from,to){
+		if(!from[pack]) return to;
+		for(var i in from[pack]['@']){
+			to = createPackList(from[pack]['@'][i],from,to);
+		}
+		if(to && from[pack]['files'] && from[pack]['files'].length)
+			return to.concat(from[pack]['files']);
+		else return to;
+	};
+	utils.resolvePack = utils.updateBundle = function(packs){
+		for(var pack in packs){
+			if(!FILES.BUNDLES[pack]){
+				FILES.BUNDLES[pack] = packs[pack];
+				for(var i in FILES.BUNDLES[pack].files){
+					var p = utils.files.resolve(FILES.BUNDLES[pack].files[i]);
+					if(p && p.isJS){
+						FILES.MODULES[p.module] = p.url;
+					}
+				}
+			}
+		}
+	};
+	utils.loadBundle = utils.loadPackage = function(pack){
+		var pack_list = [];
+		for(var i = 0; i < arguments.length; i++){
+			if(!FILES.BUNDLES[arguments[i]]){
+				pack_list.push(arguments[i]);	
+			}
+		}
+		if(pack_list.length){
+			utils.files.loadJSFile('bundle.js?cb=utils.updateBundle&$='
+					+pack_list.join(','));
+		}
+		var files = [];
+		for(var i = 0; i < arguments.length; i++){
+			if(FILES.BUNDLES[arguments[i]]){
+				files = createPackList(arguments[i],FILES.BUNDLES,files);	
+			}
+		}
+		utils.require.apply(this,files);
+	};
+	
+	utils.module = function(classPath){
+		if(MODULE_MAP[classPath]) return MODULE_MAP[classPath];
+		else return utils.require(classPath);
+	};
 	
 	utils.getOneModule = function(module,path){
 		utils.files.loadFiles(utils.url.clean(path));
@@ -204,10 +249,12 @@ window.utils = function(utils){
 	utils.require = utils.loadModule = function(){
 		var _mods_ = [], _bundles_ = [];
 		for (var j = 0; j < arguments.length; j++){
-			if(arguments[j].indexOf(":")==0){
-				_bundles_.push(arguments[j].substr(1));
-			} else {
-				_mods_.push(arguments[j])
+			if(arguments[j]){
+				if(arguments[j].indexOf(":")==0){
+					_bundles_.push(arguments[j].substr(1));
+				} else {
+					_mods_.push(arguments[j])
+				}
 			}
 		}
 		if(_bundles_.length>0){
@@ -269,24 +316,6 @@ window.utils = function(utils){
 			return RETMODULE;
 		}
 	};
-	var createPackList = function(pack,from,to){
-		if(!from[pack]) return to;
-		for(var i in from[pack]['@']){
-			createPackList(from[pack]['@'][i],from,to);
-		}
-		return to.concat(from[pack]['files'])
-	};
-	utils.resolvePack = function(packs){
-		var files = [];
-		for(var pack in packs){
-			files = createPackList(pack,packs,files);
-		}
-		utils.require.apply(this,files)
-	};
-	utils.loadBundle = utils.loadPackage = function(pack){
-		//TODO:- load packs which are not loaded
-		utils.files.loadJSFile('bundle.js?$='+Array.prototype.slice.call(arguments).join(','));
-	};
 	utils.files = function(files) {
 	    files.loaded_js = [];
 	    files.setContext = function(context){
@@ -326,7 +355,7 @@ window.utils = function(utils){
 	    		}
 	    	}
 	    	for (var j = 0; j < args.length; j++){
-	    		if(!utils._FILES_[args[j]]){
+	    		if(!FILES.LOADED[args[j]]){
 	    			if(args[j].endsWith('.css'))
 	    				csslist.push(args[j]);
 	    			else jslist.push(args[j]);
@@ -344,7 +373,7 @@ window.utils = function(utils){
 	    			cache : true,
 	    			complete : function(){
 	    				for(var i in list){
-	    					utils._FILES_[list[i]] = list[i];
+	    					FILES.LOADED[list[i]] = list[i];
 	    				}
 	    				if(cb) cb();
 	    			}
@@ -352,7 +381,7 @@ window.utils = function(utils){
 	    	} else {
 	    		for(var i in list){
 	    			files.loadJSFile(list[i]);
-	    			utils._FILES_[list[i]] = list[i];
+	    			FILES.LOADED[list[i]] = list[i];
 	    		}
 	    	} 
 	    };
@@ -364,7 +393,7 @@ window.utils = function(utils){
 	    			//dataType: "script",
 	    			complete : function(){
 	    				for(var i in list){
-	    					utils._FILES_[list[i]] = list[i];
+	    					FILES.LOADED[list[i]] = list[i];
 	    				}
 	    				if(cb) cb();
 	    			}
@@ -372,7 +401,7 @@ window.utils = function(utils){
 	    	} else {
 	    		for(var i in list){
 	    			files.loadCSSFile(list[i]);
-	    			utils._FILES_[list[i]] = list[i];
+	    			FILES.LOADED[list[i]] = list[i];
 	    		}
 	    	} 
 	    };
@@ -412,21 +441,29 @@ window.utils = function(utils){
 			start : function(){ var x =this.me; this.me+="="; return x;},
 			done : function(){ this.me = this.me.replace('=','');return this.me;}
 	}
+	var _READY_ = [];
 	utils.ready = function(cb){
-		return $(document).ready(cb);
-	}
-	//utils.ready(function(){
+		if(_READY_) return _READY_.push(cb);
+		else return cb();
+	};
+	utils.ready(function(){
 		var scripts = document.getElementsByTagName('script');
 		for(var i in scripts){
 			var p = utils.files.resolve(scripts[i].src || "");
 			if(p){
 				//console.log(p.module);
 				var cleanSRC = scripts[i].src.replace(document.location.origin,'')
-				utils._FILES_[cleanSRC] = cleanSRC
+				FILES.LOADED[cleanSRC] = cleanSRC
 				MODULE_MAP[p.module] = MODULE_MAP[p.module] || {};
 			}
 		}
-	//});
+		utils.files.loadJSFile(CONTEXT_PATH+'resources.json?cb=utils.updateBundle')
+	});
+	$(document).ready(function(){
+		while(_READY_.length){
+			_READY_[0](); _READY_.splice(0,1);
+		} _READY_ = null;
+	});
 	return utils;
 }({});
 function poly(){
