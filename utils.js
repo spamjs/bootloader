@@ -3,9 +3,14 @@ window.utils = function(utils){
 	var MODULE_CB = [];
 	var MODULE_MAP = {};
 	var MODULE_PENDING = {};
+	var DIR_MATCH = {};
+	var CONTEXT_PATH = "/";
+	var RESOURCE_PATH = "/res";
+	var COMBINEJS = true;
+	var FILES = { BUNDLES : {}, MODULES : {}, LOADED : {}};
 	
 	utils.getAll = function(){
-		return [MODULE_CB,MODULE_MAP,MODULE_PENDING]
+		return [MODULE_CB,MODULE_MAP,MODULE_PENDING,FILES]
 	};
 	
 	/**
@@ -37,10 +42,14 @@ window.utils = function(utils){
 			}
 		}
 		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._def_){
-			if(MODULE_MAP[fromString]._parent_){
-				extendClass(defObj,MODULE_MAP[fromString]._parent_,dummyProto);
+			if(Object.setPrototypeOf){
+				Object.setPrototypeOf(defObj, prototype);
+			} else {
+				if(MODULE_MAP[fromString]._parent_){
+					extendClass(defObj,MODULE_MAP[fromString]._parent_,dummyProto);
+				}
+				MODULE_MAP[fromString]._def_(defObj,dummyProto);
 			}
-			MODULE_MAP[fromString]._def_(defObj,dummyProto);
 			defObj._hasExtened_[fromString] = true;
 		} else {
 			delete MODULE_MAP[fromString];
@@ -183,12 +192,6 @@ window.utils = function(utils){
 		}
 	};
 	
-	var DIR_MATCH = {};
-	var CONTEXT_PATH = "/";
-	var RESOURCE_PATH = "/res";
-	var COMBINEJS = true;
-	var FILES = { BUNDLES : {}, MODULES : {}, LOADED : {}};
-	
 	var createPackList = function(pack,from,to){
 		if(!from[pack]) return to;
 		for(var i in from[pack]['@']){
@@ -322,6 +325,10 @@ window.utils = function(utils){
 	    	this.context = context;
 	    };
 	    files.resolve = function(path){
+	    	if(FILES.MODULES[path]) {
+	    		return { url : FILES.MODULES[path], module : path,
+		    		isJS : true, isCSS : false }
+	    	}
 	    	var isJS = path.endsWith('.js');
 	    	var isCSS = path.endsWith('.css');
 	    	if(!isJS && !isCSS) 
@@ -331,7 +338,9 @@ window.utils = function(utils){
 	    	if(p.length>1){
 	    		if(p[0]=='') url = (CONTEXT_PATH + path.slice(1));
 	    		else url = (RESOURCE_PATH + path);
-	    	} else return false;
+	    	} else {
+	    		return false;
+	    	}
 	    	return { url : url, module : p[p.length-1].replace(/([\w]+)\.js$|.css$/, "$1"),
 	    		isJS : isJS, isCSS : isCSS }
 	    };
@@ -433,6 +442,7 @@ window.utils = function(utils){
 			for(var i in config){
 				_config[i]= config[i];
 			}
+			utils.on_config_ready();
 		}
 		return _config;
 	}({});
@@ -457,13 +467,15 @@ window.utils = function(utils){
 				MODULE_MAP[p.module] = MODULE_MAP[p.module] || {};
 			}
 		}
-		utils.files.loadJSFile(CONTEXT_PATH+'resources.json?cb=utils.updateBundle&$=*')
 	});
 	$(document).ready(function(){
 		while(_READY_.length){
 			_READY_[0](); _READY_.splice(0,1);
 		} _READY_ = null;
 	});
+	utils.on_config_ready = function(){
+		utils.files.loadJSFile(CONTEXT_PATH+'resources.json?cb=utils.updateBundle&$=*')
+	};
 	return utils;
 }({});
 function poly(){
