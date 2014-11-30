@@ -1,16 +1,12 @@
 window.utils = function(utils){
-	poly();
 	var MODULE_CB = [];
 	var MODULE_MAP = {};
 	var MODULE_PENDING = {};
-	var DIR_MATCH = {};
 	var CONTEXT_PATH = "/";
 	var RESOURCE_PATH = "/res";
-	var COMBINEJS = true;
-	var FILES = { BUNDLES : {}, MODULES : {}, LOADED : {}};
 	
 	utils.getAll = function(){
-		return [MODULE_CB,MODULE_MAP,MODULE_PENDING,FILES]
+		return [MODULE_CB,MODULE_MAP,MODULE_PENDING]
 	};
 	
 	/**
@@ -43,7 +39,7 @@ window.utils = function(utils){
 		}
 		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._def_){
 			if(Object.setPrototypeOf){
-				Object.setPrototypeOf(defObj, prototype);
+				Object.setPrototypeOf(defObj, MODULE_MAP[fromString]);
 			} else {
 				if(MODULE_MAP[fromString]._parent_){
 					extendClass(defObj,MODULE_MAP[fromString]._parent_,dummyProto);
@@ -58,59 +54,58 @@ window.utils = function(utils){
 		return defObj;
 	};
 	
-	var extendProto = function(cons,fromString){
+	var getPrototype = function(fromString){
 		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._instance_){
-			var _proto_ = cons.prototype;
-			//console.info(utils.status.start(),'extendProto',fromString)
-			cons.prototype = MODULE_MAP[fromString].instance();
-			//console.info(utils.status.done(),'extendProtoDone',fromString)
-			for(var prop in _proto_){
-				cons.prototype[prop] = _proto_[prop];
-			}
+			return MODULE_MAP[fromString].instance();
+		} else {
+			return new (function(){
+				this.parent = function(fun){
+					if(fun===undefined)
+						return Object.getPrototypeOf(this);
+					return Object.getPrototypeOf(this)[fun].bind(this);
+				};
+			});
 		}
-		cons.prototype.parent = function(fun){
-			if(fun===undefined)
-				return Object.getPrototypeOf(this);
-			return Object.getPrototypeOf(this)[fun].bind(this);
-		}
-	};
+	}
 	
 	var getModule = function(classPath){
 		return {
 			module : classPath,
 			_hasExtened_ : {},
 			as : function(_def_){
-				if(!this._def_ ){
+				if(!this.hasOwnProperty('_def_') ){
+					var self = this;
 					this._def_ = _def_;
-					var _protos_ = {};
+					//Prepraring Prototype
+					var _protos_ = getPrototype(this._parent_);
 					//console.info(utils.status.start(),"ASTART",this.module,this._parent_,_protos_)
 					try	{
 						this._def_(this,_protos_);
 					} catch (e){
 						console.warn(this.module,e);
 					}
-					if(!this._instance_) this._instance_ = function(){
-						console.info('no function...')
-					};
 					if(typeof this._instance_ === 'function'){
 						this._instance_.prototype = _protos_;
-						//console.info(utils.status.start(),"xpro",this.module,this._parent_)
-						extendProto(this._instance_,this._parent_);
-						//console.info(utils.status.done(),"xpro",this.module,this._parent_)
+						//Additional Functions
+						this._instance_.prototype.getClass = function(){
+							return self;
+						};
 					}
 					if(this._execute_) this._execute_();
 					if(this._ready_){
-						var that = this;
 						utils.ready(function(){
 							try{
-								if(that._ready_) that._ready_();
+								if(self._ready_) self._ready_();
 							} catch (e){
-								console.error(that.module+"._ready_:exception ",e);
+								console.error(self.module+"._ready_:exception ",e);
 							}
 						});
 					}
 					//console.info(utils.status.done(),"ASDONE",this.module,this._parent_)
-				} else throw new Error('module can have only one definition')
+				} else {
+					throw new Error("Module Definition" + this.module + 'already Exists ' 
+							+ 'module can have only one definition')
+				}
 				return this;
 			},
 			extend : function(_parent_){
@@ -124,35 +119,28 @@ window.utils = function(utils){
 				return MODULE_MAP[this._parent_];
 			},
 			instance : function(a,b,c,d,e,f,g,h){
-				//console.info(utils.status.start(),'.instance...',this.module,a,b,c,d,e,f,g,h);
 				if(this._instance_){
 					var __instance__ = this._instance_;
-					//console.info(utils.status.start(),'_instance_Exists',__instance__);
 					try{
-						//console.info(utils.status.start(),this.module,'NEW_instance_Start',__instance__);
 						var newInst = new __instance__(a,b,c,d,e,f,g,h);
-						//console.info(utils.status.done(),this.module,'NEW_instance_Ends',__instance__);
 						if(newInst._create_) newInst._create_();
 						return newInst;
 					} catch (e){
 						console.error(this.module+"._instance_:exception ",e);
 					}
-					//console.info(utils.status.done(),'_instance_Exists',__instance__);
 				}
-				//console.info(utils.status.done(),'.instance...',this.module,a,b,c,d,e,f,g,h);
 			},
 			requires : function(){
 				
 			}
 		};
-	}
+	};
 	
 	utils.extend = function(fromString){
 		return utils.define().extend(fromString);
 	};
 	
 	utils.define = function(classPath,asFun){
-		//console.info(classPath,asFun)
 		try{
 			if(!classPath){
 				/**
@@ -180,9 +168,7 @@ window.utils = function(utils){
 				} //else throw new Error("Cannot redefine "+classPath + " as it already exists");
 				if(MODULE_MAP[classPath] && asFun && typeof asFun == 'function'){
 					MODULE_MAP[classPath].as(asFun);
-					//console.log('classPath',classPath)
 				}
-				//console.info('returning',classPath)
 				return MODULE_MAP[classPath] ;
 			} else if(typeof classPath=='function'){
 				return getModule('anonymous').as(classPath);
@@ -202,22 +188,12 @@ window.utils = function(utils){
 		else return to;
 	};
 	utils.resolvePack = utils.updateBundle = function(packs){
-		for(var pack in packs){
-			if(!FILES.BUNDLES[pack]){
-				FILES.BUNDLES[pack] = packs[pack];
-				for(var i in FILES.BUNDLES[pack].files){
-					var p = utils.files.resolve(FILES.BUNDLES[pack].files[i]);
-					if(p && p.isJS){
-						FILES.MODULES[p.module] = p.url;
-					}
-				}
-			}
-		}
+		return utils.files.update(packs);
 	};
 	utils.loadBundle = utils.loadPackage = function(pack){
 		var pack_list = [];
 		for(var i = 0; i < arguments.length; i++){
-			if(!FILES.BUNDLES[arguments[i]]){
+			if(!utils.files.BUNDLES[arguments[i]]){
 				pack_list.push(arguments[i]);	
 			}
 		}
@@ -227,28 +203,22 @@ window.utils = function(utils){
 		}
 		var files = [];
 		for(var i = 0; i < arguments.length; i++){
-			if(FILES.BUNDLES[arguments[i]]){
-				files = createPackList(arguments[i],FILES.BUNDLES,files);	
+			console.log("---",arguments[i],utils.files.BUNDLES[arguments[i]]);
+			if(utils.files.BUNDLES[arguments[i]]){
+				files = createPackList(arguments[i],utils.files.BUNDLES,files);	
 			}
 		}
+		console.log("--",pack,files);
 		utils.require.apply(this,files);
 	};
 	
 	utils.module = function(classPath){
-		if(MODULE_MAP[classPath]) return MODULE_MAP[classPath];
-		else return utils.require(classPath);
+		if(!MODULE_MAP[classPath]){
+			utils.require(classPath);
+		}
+		return MODULE_MAP[classPath];
 	};
 	
-	utils.getOneModule = function(module,path){
-		utils.files.loadFiles(utils.url.clean(path));
-		//console.log(module,path,MODULE_MAP);
-		return MODULE_MAP[module];
-	};
-	utils.getAllModule = function(module,path,mod_list,js_list){
-		MODULE_PENDING[module] = module;
-		mod_list.push(module);
-		js_list.push(utils.url.clean(path));
-	};
 	utils.require = utils.loadModule = function(){
 		var _mods_ = [], _bundles_ = [];
 		for (var j = 0; j < arguments.length; j++){
@@ -261,191 +231,43 @@ window.utils = function(utils){
 			}
 		}
 		if(_bundles_.length>0){
-			utils.loadBundle.apply(this,_bundles_);
+			var files = utils.loadBundle.apply(this,_bundles_);
 		}
-		if(_mods_.length==1){
-			var module = _mods_[0];
+		var js_list = []; //Files to be fetched
+		var mod_list = []; //Modules to be downloaded
+		for (var j = 0; j < _mods_.length; j++) {
+			var module = _mods_[j];
 			if(!MODULE_MAP[module]){
-				var p = utils.files.resolve(module);
-				if(!p){
-					for(var i in DIR_MATCH){
-						if(DIR_MATCH[i].reg.test(module)){
-							return utils.getOneModule(module,RESOURCE_PATH+DIR_MATCH[i].dir+module+'.js');
-						}
-					}
-					return utils.getOneModule(module,RESOURCE_PATH+module+'.js');
-				} else if(!MODULE_MAP[p.module]){
-					return utils.getOneModule(p.module,p.url);
-				} else return MODULE_MAP[p.module];
-			} else return MODULE_MAP[module];
-		} else if(_mods_.length>1){
-			var js_list = [];
-			var mod_list = [];
-			for (var j = 0; j < _mods_.length; j++) {
-				var module = _mods_[j];
-				if(!MODULE_MAP[module]){
-					var p = utils.files.resolve(module);
-					if(!p){
-						for(var i in DIR_MATCH){
-							if(DIR_MATCH[i].reg.test(module)){
-								utils.getAllModule(module,RESOURCE_PATH+DIR_MATCH[i].dir+module+'.js',
-										mod_list,js_list);
-							}
-						}
-					} else if(!MODULE_MAP[p.module]){
-						utils.getAllModule(p.module,p.url,mod_list,js_list);
-					}
-				}
+				var p = utils.files.getInfo(module);
+				MODULE_PENDING[p.module] = p.module;
+				mod_list.push(p);
+				js_list.push(p.url);
 			}
-			var RETMODULE = [],_args = arguments;
-			utils.files.loadFiles.call(utils.files,js_list,function(){
-				for(var i in mod_list){
-					delete MODULE_PENDING[mod_list[i]];
-				}
-				var _MODULE_CB = MODULE_CB;
-				MODULE_CB = []
-				for(var i in _MODULE_CB){
-					_MODULE_CB[i]();
-    	    	}
-				for(var i in _args){
-					RETMODULE.push(MODULE_MAP[_args[i]]);
-				}
-				for(var i in mod_list){
-					if(!MODULE_MAP[mod_list[i]]){
-						console.warn(mod_list[i],'is not registered module');
-					};
-				}
-			});
-			return RETMODULE;
 		}
-	};
-	utils.files = function(files) {
-	    files.loaded_js = [];
-	    files.setContext = function(context){
-	    	this.context = context;
-	    };
-	    files.resolve = function(path){
-	    	if(FILES.MODULES[path]) {
-	    		return { url : FILES.MODULES[path], module : path,
-		    		isJS : true, isCSS : false }
+		var RETMODULE = [],_args = arguments;
+		utils.files.loadFiles.call(utils.files,js_list,function(){
+			for(var i in mod_list){
+				delete MODULE_PENDING[mod_list[i].module];
+			}
+			var _MODULE_CB = MODULE_CB;
+			MODULE_CB = []
+			for(var i in _MODULE_CB){
+				_MODULE_CB[i]();
 	    	}
-	    	var isJS = path.endsWith('.js');
-	    	var isCSS = path.endsWith('.css');
-	    	if(!isJS && !isCSS) 
-	    		path = path+'.js';
-	    	var p = path.split('/');
-	    	var url = false;
-	    	if(p.length>1){
-	    		if(p[0]=='') url = (CONTEXT_PATH + path.slice(1));
-	    		else url = (RESOURCE_PATH + path);
-	    	} else {
-	    		return false;
-	    	}
-	    	return { url : url, module : p[p.length-1].replace(/([\w]+)\.js$|.css$/, "$1"),
-	    		isJS : isJS, isCSS : isCSS }
-	    };
-	    files.setResourcePath = function(path){
-	    	this.rpath = path;
-	    };
-	    files.loadJSFile = function(js){
-	        $('head').append('<script src="' + js + '" type="text/javascript"></script>');
-	    };
-	    files.loadCSSFile = function(css){
-	        $('head').append('<link href="' + css + '" type="text/css" rel=stylesheet></link>');
-	    };
-	    files.loadFiles = function() {
-	    	var args, jslist=[],csslist=[],cb;
-	    	if(typeof arguments[0] === 'string'){
-	    		args = arguments;
-	    	} else if($.isArray(arguments[0])){
-	    		args = arguments[0];
-	    		if(arguments[1] && typeof arguments[1]=='function'){
-	    			cb = arguments[1];
-	    		}
-	    	}
-	    	for (var j = 0; j < args.length; j++){
-	    		if(!FILES.LOADED[args[j]]){
-	    			if(args[j].endsWith('.css'))
-	    				csslist.push(args[j]);
-	    			else jslist.push(args[j]);
-	    		}
-	    	}
-	    	files.loadJs(jslist,cb);
-	    	files.loadCss(csslist,cb);
-	    };
-	    files.loadJs = function(list,cb){
-	    	if(COMBINEJS && list.length){
-	    		$.ajax({
-	    			async: false,
-	    			url: RESOURCE_PATH + 'combine.js?@='+list.join(','),
-	    			dataType: "script",
-	    			cache : true,
-	    			complete : function(){
-	    				for(var i in list){
-	    					FILES.LOADED[list[i]] = list[i];
-	    				}
-	    				if(cb) cb();
-	    			}
-	    		});
-	    	} else {
-	    		for(var i in list){
-	    			files.loadJSFile(list[i]);
-	    			FILES.LOADED[list[i]] = list[i];
-	    		}
-	    	} 
-	    };
-	    files.loadCss = function(list,cb){
-	    	if(COMBINEJS && list.length){
-	    		$.ajax({
-	    			async: true,
-	    			url: RESOURCE_PATH + 'combine.css?@='+list.join(','),
-	    			//dataType: "script",
-	    			complete : function(){
-	    				for(var i in list){
-	    					FILES.LOADED[list[i]] = list[i];
-	    				}
-	    				if(cb) cb();
-	    			}
-	    		});
-	    	} else {
-	    		for(var i in list){
-	    			files.loadCSSFile(list[i]);
-	    			FILES.LOADED[list[i]] = list[i];
-	    		}
-	    	} 
-	    };
-	    return files;
-	}({});
-	
-	var trimSlashes = function(str){
-		return str.replace(/(^\/)|(\/$)/g, "");
-	};
-	
-	utils.config = function(_config){
-		_config.set = function(config){
-			CONTEXT_PATH = config.contextPath ? ("/"+trimSlashes(config.contextPath) + "/") : CONTEXT_PATH;
-			RESOURCE_PATH =  (config.contextPath && config.resourcePath)
-								? ('/' + trimSlashes(config.contextPath) 
-										+ '/' +trimSlashes(config.resourcePath) + '/') 
-								: RESOURCE_PATH;
-			COMBINEJS = (config.combine!=undefined) ? config.combine : COMBINEJS;
-			if(config.moduleDir){
-				for(var reg in config.moduleDir){
-					DIR_MATCH[reg] = {
-							reg : new RegExp(reg.replace('\.',"\\.",'g').replace('*','\\.*','g')),
-							dir : config.moduleDir[reg]
-					}
+			for(var i in _args){
+				RETMODULE.push(MODULE_MAP[_args[i]]);
+			}
+			for(var i in mod_list){
+				if(!MODULE_MAP[mod_list[i].module]){
+					console.warn(mod_list[i],'is not registered module');
+				} else {
+					MODULE_MAP[mod_list[i].module]._dir_ = mod_list[i].dir;
 				}
 			}
-			config.contextPath = CONTEXT_PATH;
-			delete _config.moduleDir;
-			for(var i in config){
-				_config[i]= config[i];
-			}
-			utils.on_config_ready();
-		}
-		return _config;
-	}({});
+		});
+		return RETMODULE;
+	};
+
 	utils.status = {
 			me  : "=",
 			start : function(){ var x =this.me; this.me+="="; return x;},
@@ -458,13 +280,15 @@ window.utils = function(utils){
 	};
 	utils.ready(function(){
 		var scripts = document.getElementsByTagName('script');
-		for(var i in scripts){
-			var p = utils.files.resolve(scripts[i].src || "");
-			if(p){
-				//console.log(p.module);
-				var cleanSRC = scripts[i].src.replace(document.location.origin,'')
-				FILES.LOADED[cleanSRC] = cleanSRC
-				MODULE_MAP[p.module] = MODULE_MAP[p.module] || {};
+		for(var i=0; i<scripts.length;i++){
+			if(!scripts[i].loaded){
+				if(scripts[i].src && !scripts[i].getAttribute('loaded')){
+					var p = utils.files.getInfo((scripts[i].src).replace(document.location.origin,''));
+					var cleanSRC = p.url.replace(document.location.origin,'');
+					utils.files.LOADED[cleanSRC] = cleanSRC
+					MODULE_MAP[p.module] = MODULE_MAP[p.module] || (!MODULE_PENDING[p.module] ? {} : null);
+					MODULE_MAP[p.module]._dir_ = p.dir;
+				}
 			}
 		}
 	});
@@ -474,28 +298,168 @@ window.utils = function(utils){
 		} _READY_ = null;
 	});
 	utils.on_config_ready = function(){
-		utils.files.loadJSFile(CONTEXT_PATH+'resources.json?cb=utils.updateBundle&$=*')
+		if(utils.config.bundle_list!==undefined) utils.files.loadJSFile(utils.config.bundle_list)
 	};
 	return utils;
 }({});
-function poly(){
-	if ( typeof Object.getPrototypeOf !== "function" ) {
-		  if ( typeof "test".__proto__ === "object" ) {
-		    Object.getPrototypeOf = function(object){
-		      return object.__proto__;
-		    };
-		  } else {
-		    Object.getPrototypeOf = function(object){
-		      return object.constructor.prototype;
-		    };
-		  }
+
+utils.define('utils.config', function(config) {
+	config.combine = true;
+	var trimSlashes = function(str){
+		return str.replace(/(^\/)|(\/$)/g, "");
+	};
+	config.ajaxPrefilter = function(options, originalOptions, jqXHR) {
+		if (options.dataType == 'script' || originalOptions.dataType == 'script') {
+			options.cache = true;
 		}
-		if (typeof String.prototype.endsWith !== 'function') {
-		    String.prototype.endsWith = function(suffix) {
-		        return this.indexOf(suffix, this.length - suffix.length) !== -1;
-		    };
-		}	
-}
+	};
+	config.set = function(options){
+		CONTEXT_PATH = options.contextPath ? ("/"+trimSlashes(options.contextPath) + "/") : CONTEXT_PATH;
+		RESOURCE_PATH =  (options.contextPath && options.resourcePath)
+							? ('/' + trimSlashes(options.contextPath) 
+									+ '/' +trimSlashes(options.resourcePath) + '/') 
+							: RESOURCE_PATH;
+		config.combine = (options.combine!=undefined) ? options.combine : config.combine;
+		if(options.moduleDir){
+			for(var reg in options.moduleDir){
+				utils.files.DIR_MATCH[reg] = {
+						reg : new RegExp(reg.replace('\.',"\\.",'g').replace('*','\\.*','g')),
+						dir : options.moduleDir[reg]
+				}
+			}
+		}
+		options.contextPath = CONTEXT_PATH;
+		delete options.moduleDir;
+		for(var i in options){
+			config[i]= options[i];
+		}
+		$.ajaxPrefilter(config.ajaxPrefilter);
+		utils.on_config_ready();
+	}
+});
+
+utils.define('utils.files', function(files) {
+	var config = utils.config;
+	files.MODULES = {};
+	files.LOADED = {};
+	files.BUNDLES = {};
+    files.DIR_MATCH = {};
+    
+	files.update = function(packs){
+		for(var pack in packs){
+			if(!this.BUNDLES[pack]){
+				this.BUNDLES[pack] = packs[pack];
+				for(var i in this.BUNDLES[pack].files){
+					var p = this.getInfo(this.BUNDLES[pack].files[i]);
+					if(p && p.isJS){
+						this.MODULES[p.module] = p;
+					}
+				}
+			}
+		}
+	};
+	
+	files.dirMatch = function(module){
+		for(var i in this.DIR_MATCH){
+			if(this.DIR_MATCH[i].reg.test(module)){
+				return this.DIR_MATCH[i].dir + module
+			}
+		} return module;
+	}
+    files.getInfo = function(path){
+    	if(files.MODULES[path]) {
+    		return files.MODULES[path];
+    	}
+    	var isJS = path.endsWith('.js');
+    	var isCSS = path.endsWith('.css');
+    	if(!isJS && !isCSS) {
+    		path = path+'.js';
+    		isJS = true;
+    	}
+    	var info = utils.url.info(path,utils.config.contextPath,utils.config.resourcePath);
+    	var module = info.file.replace(/([\w]+)\.js$|.css$/, "$1");
+    	var ext = isJS ? "js" : "css"
+    	if(info.isFile){
+    		info = utils.url.info(
+    				files.dirMatch(module) + "." + ext,
+    				utils.config.contextPath,utils.config.resourcePath);
+    	}
+    	info.isJS = isJS; info.isCSS = isCSS; info.ext = ext;
+    	info.module = module;
+    	files.MODULES[info.module] = info;
+    	return info;
+    };
+    files.setResourcePath = function(path){
+    	this.rpath = path;
+    };
+    files.loadJSFile = function(js){
+        $('head').append('<script loaded=true src="' + js + '" type="text/javascript"></script>');
+    };
+    files.loadCSSFile = function(css){
+        $('head').append('<link loaded=true href="' + css + '" type="text/css" rel=stylesheet></link>');
+    };
+    files.loadFiles = function() {
+    	var args, jslist=[],csslist=[],cb;
+    	if(typeof arguments[0] === 'string'){
+    		args = arguments;
+    	} else if($.isArray(arguments[0])){
+    		args = arguments[0];
+    		if(arguments[1] && typeof arguments[1]=='function'){
+    			cb = arguments[1];
+    		}
+    	}
+    	for (var j = 0; j < args.length; j++){
+    		if(!files.LOADED[args[j]]){
+    			if(args[j].endsWith('.css'))
+    				csslist.push(args[j]);
+    			else jslist.push(args[j]);
+    		}
+    	}
+    	files.loadJs(jslist,cb);
+    	files.loadCss(csslist,cb);
+    };
+    files.loadJs = function(list,cb){
+    	if(config.combine && list.length){
+    		$.ajax({
+    			async: false,
+    			url: RESOURCE_PATH + 'combine.js?@='+list.join(','),
+    			dataType: "script",
+    			cache : true,
+    			complete : function(){
+    				for(var i in list){
+    					files.LOADED[list[i]] = list[i];
+    				}
+    				if(cb) cb();
+    			}
+    		});
+    	} else {
+    		for(var i in list){
+    			files.loadJSFile(list[i]);
+    			files.LOADED[list[i]] = list[i];
+    		}
+    		if(cb) cb();
+    	} 
+    };
+    files.loadCss = function(list,cb){
+    	if(config.combine && list.length){
+    		$.ajax({
+    			async: true,
+    			url: RESOURCE_PATH + 'combine.css?@='+list.join(','),
+    			complete : function(){
+    				for(var i in list){
+    					files.LOADED[list[i]] = list[i];
+    				}
+    				if(cb) cb();
+    			}
+    		});
+    	} else {
+    		for(var i in list){
+    			files.loadCSSFile(list[i]);
+    			files.LOADED[list[i]] = list[i];
+    		}
+    	} 
+    };
+});
 
 utils.define('utils.url', function(url) {
 	url.getParam = function (name,_url) {
@@ -509,8 +473,26 @@ utils.define('utils.url', function(url) {
 		return (data[index]);
 	};
 	url.push = function(pageData, pageTitle, pageUrl){
-		console.info("pushState",pageData,pageUrl);
 		return window.history.pushState(pageData || null, pageTitle || null, pageUrl);
+	};
+	url.info = function(_path,_context,_pwd){
+		var path = url.resolve(_path,_context,_pwd);
+		var info = { url : path };
+    	var x = path.split('/');
+    	info.isFile = (_path.split('/').length===1);
+    	info.file = x.pop();
+    	info.dir = x.join('/');
+    	return info;
+	};
+	url.resolve = function(path,context,pwd){
+		var context = context || ""; var pwd = pwd || "";
+		if(path.indexOf('http://')==0 || path.indexOf('https://')==0)
+			return  path;
+		else if(path.indexOf('/')==0){
+    		return url.clean(path);
+    	} else {
+    		return url.clean("/"+context + "/" + pwd + "/" + path);
+    	}
 	};
 	url.clean = function(url){
 		var ars = url.split('/');
@@ -529,6 +511,6 @@ utils.define('utils.url', function(url) {
 		        break;
 		    }
 		}
-		return domain +  '/'  + parents.join( '/');
+		return (domain +  '/'  + parents.join( '/')).replace(/(\/)+/g,'/');
 	};
 });
