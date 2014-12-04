@@ -84,7 +84,11 @@ window.utils = function(utils){
 					} catch (e){
 						console.warn(this.module,e);
 					}
-					if(typeof this._instance_ === 'function'){
+					this.proto_object = _protos_;
+					this.proto_object.getClass = function(){
+						return self;
+					};
+					if(false && typeof this._instance_ === 'function'){
 						this._instance_.prototype = _protos_;
 						//Additional Functions
 						this._instance_.prototype.getClass = function(){
@@ -122,7 +126,8 @@ window.utils = function(utils){
 				if(this._instance_){
 					var __instance__ = this._instance_;
 					try{
-						var newInst = new __instance__(a,b,c,d,e,f,g,h);
+						var newInst = Object.create(this.proto_object);
+						this._instance_.call(newInst,a,b,c,d,e,f,g,h);
 						if(newInst._create_) newInst._create_();
 						return newInst;
 					} catch (e){
