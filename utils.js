@@ -37,14 +37,14 @@ window.utils = function(utils){
 				utils.loadModule(fromString);
 			}
 		}
-		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._def_){
+		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._define_){
 			if(Object.setPrototypeOf){
 				Object.setPrototypeOf(defObj, MODULE_MAP[fromString]);
 			} else {
 				if(MODULE_MAP[fromString]._parent_){
 					extendClass(defObj,MODULE_MAP[fromString]._parent_,dummyProto);
 				}
-				MODULE_MAP[fromString]._def_(defObj,dummyProto);
+				MODULE_MAP[fromString]._define_(defObj,dummyProto);
 			}
 			defObj._hasExtened_[fromString] = true;
 		} else {
@@ -72,15 +72,19 @@ window.utils = function(utils){
 		return {
 			module : classPath,
 			_hasExtened_ : {},
-			as : function(_def_){
-				if(!this.hasOwnProperty('_def_') ){
+			as : function(_define_){
+				if(!this.hasOwnProperty('_define_') ){
 					var self = this;
-					this._def_ = _def_;
+					this._define_ = _define_;
 					//Prepraring Prototype
 					var _protos_ = getPrototype(this._parent_);
 					//console.info(utils.status.start(),"ASTART",this.module,this._parent_,_protos_)
 					try	{
-						this._def_(this,_protos_);
+						if(this.parent()!==undefined && this.parent()._extend_){
+							this.parent()._extend_(this,_protos_);
+						} else {
+							this._define_(this,_protos_);
+						}
 					} catch (e){
 						console.warn(this.module,e);
 					}
@@ -96,6 +100,9 @@ window.utils = function(utils){
 						};
 					}
 					if(this._execute_) this._execute_();
+					if(this.parent()!==undefined && this.parent()._extended_){
+						this.parent()._extended_(this,this.proto_object);
+					}
 					if(this._ready_){
 						utils.ready(function(){
 							try{
@@ -160,7 +167,7 @@ window.utils = function(utils){
 				 * If classPath is given and is actually a package name then
 				 * module is created in global namespace and returned to caller.
 				 */
-				if(!MODULE_MAP[classPath] || !MODULE_MAP[classPath]._def_) {
+				if(!MODULE_MAP[classPath] || !MODULE_MAP[classPath]._define_) {
 					var nspace = classPath.split('.');
 					var win = window;
 					var retspace = nspace[0];
