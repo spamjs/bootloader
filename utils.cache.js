@@ -1,7 +1,7 @@
 utils.define('utils.cache', function(cache) {
 
-	var json = utils.require('utils.json');
-	var localStorage = window.localStorage || utils.require('utils.cache.localStorage');
+	var json = utils.module('utils.json');
+	var localStorage = window.localStorage || utils.module('utils.cache.localStorage');
 	var cacheCounter = 0;
 	var defaultCache;
 	

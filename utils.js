@@ -234,7 +234,11 @@ window.utils = function(utils){
 	
 	utils.module = function(classPath){
 		if(!MODULE_MAP[classPath]){
-			utils.require(classPath);
+			var info = utils.files.getInfo(classPath);
+			if(!MODULE_MAP[info.module]){
+				utils.require(classPath);				
+			}
+			return MODULE_MAP[info.module];
 		}
 		return MODULE_MAP[classPath];
 	};
@@ -245,6 +249,7 @@ window.utils = function(utils){
 			if(arguments[j]){
 				if(arguments[j].indexOf(":")==0){
 					_bundles_.push(arguments[j].substr(1));
+					_mods_.push(null);
 				} else {
 					_mods_.push(arguments[j])
 				}
@@ -257,14 +262,15 @@ window.utils = function(utils){
 		var mod_list = []; //Modules to be downloaded
 		for (var j = 0; j < _mods_.length; j++) {
 			var module = _mods_[j];
-			if(!MODULE_MAP[module]){
+			if(module && !MODULE_MAP[module]){
 				var p = utils.files.getInfo(module);
 				MODULE_PENDING[p.module] = p.module;
+				_mods_[j] = p.module;
 				mod_list.push(p);
 				js_list.push(p.url);
 			}
 		}
-		var RETMODULE = [],_args = arguments;
+		var RETMODULE = [],_args = _mods_;
 		utils.files.loadFiles.call(utils.files,js_list,function(){
 			for(var i in mod_list){
 				delete MODULE_PENDING[mod_list[i].module];
@@ -406,7 +412,7 @@ utils.define('utils.files', function(files) {
     	}
     	info.isJS = isJS; info.isCSS = isCSS; info.ext = ext;
     	info.module = module;
-    	files.MODULES[info.module] = info;
+    	files.MODULES[info.module] = files.MODULES[path] = info;
     	return info;
     };
     files.setResourcePath = function(path){
