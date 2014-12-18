@@ -68,90 +68,98 @@ window.utils = function(utils){
 		}
 	}
 	
-	var getModule = function(classPath){
-		return {
-			module : classPath,
-			_hasExtened_ : {},
-			as : function(_define_){
-				if(!this.hasOwnProperty('_define_') ){
-					var self = this;
-					this._define_ = _define_;
-					//Prepraring Prototype
-					var _protos_ = getPrototype(this._parent_);
-					//console.info(utils.status.start(),"ASTART",this.module,this._parent_,_protos_)
-					try	{
-						if(this.parent()!==undefined && this.parent()._extend_){
-							this.parent()._extend_(this,_protos_);
-						} else {
-							this._define_(this,_protos_);
-						}
-					} catch (e){
-						console.warn(this.module,e);
-					}
-					this.proto_object = _protos_;
-					this.proto_object.getClass = function(){
-						return self;
-					};
-					if(false && typeof this._instance_ === 'function'){
-						this._instance_.prototype = _protos_;
-						//Additional Functions
-						this._instance_.prototype.getClass = function(){
-							return self;
-						};
-					}
-					if(this._execute_) this._execute_();
-					if(this.parent()!==undefined && this.parent()._extended_){
-						this.parent()._extended_(this,this.proto_object);
-					}
-					if(this._ready_){
-						utils.ready(function(){
-							try{
-								if(self._ready_) self._ready_();
-							} catch (e){
-								console.error(self.module+"._ready_:exception ",e);
-							}
-						});
-					}
-					//console.info(utils.status.done(),"ASDONE",this.module,this._parent_)
+	var ModuleClass = function ModuleClass (moduleName){
+		this.module = moduleName;
+		this._hasExtened_ = {};
+	};
+	ModuleClass.prototype.as = function(_define_){
+		if(!this.hasOwnProperty('_define_') ){
+			var self = this;
+			this._define_ = _define_;
+			//Prepraring Prototype
+			var _protos_ = getPrototype(this._parent_);
+			//console.info(utils.status.start(),"ASTART",this.module,this._parent_,_protos_)
+			try	{
+				if(this.parent()!==undefined && this.parent()._extend_){
+					this.parent()._extend_(this,_protos_);
 				} else {
-					throw new Error("Module Definition" + this.module + 'already Exists ' 
-							+ 'module can have only one definition')
+					this._define_(this,_protos_);
 				}
-				return this;
-			},
-			extend : function(_parent_){
-				if(!this._parent_){
-					this._parent_ = _parent_;
-					extendClass(this,this._parent_,{});
-				}
-				return this;
-			},
-			parent : function(){
-				return MODULE_MAP[this._parent_];
-			},
-			instance : function(a,b,c,d,e,f,g,h){
-				if(this._instance_){
-					var __instance__ = this._instance_;
-					try{
-						var newInst = Object.create(this.proto_object);
-						this._instance_.call(newInst,a,b,c,d,e,f,g,h);
-						if(newInst._create_) newInst._create_();
-						return newInst;
-					} catch (e){
-						console.error(this.module+"._instance_:exception ",e);
-					}
-				}
-			},
-			requires : function(){
-				
+			} catch (e){
+				console.warn(this.module,e);
 			}
-		};
+			this.proto_object = _protos_;
+			this.proto_object.getClass = function(){
+				return self;
+			};
+			if(false && typeof this._instance_ === 'function'){
+				this._instance_.prototype = _protos_;
+				//Additional Functions
+				this._instance_.prototype.getClass = function(){
+					return self;
+				};
+			}
+			if(this._execute_) this._execute_();
+			if(this.parent()!==undefined && this.parent()._extended_){
+				this.parent()._extended_(this,this.proto_object);
+			}
+			if(this._ready_){
+				utils.ready(function(){
+					try{
+						if(self._ready_) self._ready_();
+					} catch (e){
+						console.error(self.module+"._ready_:exception ",e);
+					}
+				});
+			}
+			//console.info(utils.status.done(),"ASDONE",this.module,this._parent_)
+		} else {
+			throw new Error("Module Definition" + this.module + 'already Exists ' 
+					+ 'module can have only one definition')
+		}
+		return this;
+	};
+	
+	ModuleClass.prototype.extend = function(_parent_){
+		if(!this._parent_){
+			this._parent_ = _parent_;
+			extendClass(this,this._parent_,{});
+		}
+		return this;
+	};
+	ModuleClass.prototype.parent = function(){
+		return MODULE_MAP[this._parent_];
+	};
+	ModuleClass.prototype.instance = function(a,b,c,d,e,f,g,h){
+		if(this._instance_){
+			var __instance__ = this._instance_;
+			try{
+				var newInst = Object.create(this.proto_object);
+				this._instance_.call(newInst,a,b,c,d,e,f,g,h);
+				if(newInst._create_) newInst._create_();
+				return newInst;
+			} catch (e){
+				console.error(this.module+"._instance_:exception ",e);
+			}
+		}
+	};
+	ModuleClass.prototype.requires = function(){
+		
 	};
 	
 	utils.extend = function(fromString){
 		return utils.define().extend(fromString);
 	};
-	
+
+	 /**
+	  * function define(moduleName,moduleDef) 
+	  * @memberOf   utils
+	  * @param   {String} moduleName
+	  * @param   {Function} moduleDef
+	  * @returns {ModuleClass}
+	  * @see     Object
+	  * @since   Standard ECMA-262 3rd. Edition 
+	 */ 
 	utils.define = function(classPath,asFun){
 		try{
 			if(!classPath){
@@ -160,7 +168,7 @@ window.utils = function(utils){
 				 * and returned to caller, it will not have
 				 * any global identity, referring to it.
 				 */
-				return getModule('anonymous');
+				return new ModuleClass('anonymous');
 				
 			} else if(typeof classPath=='string'){
 				/**
@@ -176,14 +184,14 @@ window.utils = function(utils){
 						retspace = nspace[i];
 						win = win[retspace];
 					}
-					MODULE_MAP[classPath] = win[nspace[nspace.length-1]] = getModule(classPath);
+					MODULE_MAP[classPath] = win[nspace[nspace.length-1]] = new ModuleClass(classPath);
 				} //else throw new Error("Cannot redefine "+classPath + " as it already exists");
 				if(MODULE_MAP[classPath] && asFun && typeof asFun == 'function'){
 					MODULE_MAP[classPath].as(asFun);
 				}
 				return MODULE_MAP[classPath] ;
 			} else if(typeof classPath=='function'){
-				return getModule('anonymous').as(classPath);
+				return (new ModuleClass('anonymous')).as(classPath);
 			}
 		} catch (e){
 			console.error("e",e);
