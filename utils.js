@@ -217,7 +217,7 @@ window.utils = function(utils){
 				pack_list.push(arguments[i]);	
 			}
 		}
-		if(pack_list.length){
+		if(pack_list.length && utils.config.resolve_bundles){
 			utils.files.loadJSFile('resources.json?cb=utils.updateBundle&$='
 					+pack_list.join(','));
 		}
@@ -324,7 +324,19 @@ window.utils = function(utils){
 		} _READY_ = null;
 	});
 	utils.on_config_ready = function(){
-		if(utils.config.bundle_list!==undefined) utils.files.loadJSFile(utils.config.bundle_list)
+		
+		if(utils.config.bundles!==undefined){
+			if(utils.config.bundles.endsWith('.json')){
+				$.ajax({
+					  url: utils.config.bundles,
+					  dataType: 'json',
+					  async: false,
+					  success: function(resp) {
+							utils.updateBundle(resp.bundles);
+					  }
+				});
+			} else utils.files.loadJSFile(utils.config.bundles)
+		}
 	};
 	return utils;
 }({});
@@ -354,11 +366,13 @@ utils.define('utils.config', function(config) {
 				}
 			}
 		}
+		config.resolve_bundles = (options.resolve_bundles===undefined) || options.resolve_bundles;
 		options.contextPath = CONTEXT_PATH;
 		delete options.moduleDir;
 		for(var i in options){
 			config[i]= options[i];
 		}
+		config.bundles = options.bundle_list || options.bundles;
 		$.ajaxPrefilter(config.ajaxPrefilter);
 		utils.on_config_ready();
 	}
