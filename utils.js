@@ -1,4 +1,10 @@
 window.utils = function(utils){
+	if(utils.__INTIALIZED__){
+		return utils //throw "ALREADY INTIALIZED";
+	}
+	utils.__INTIALIZED__ = true;
+	console.info("__INTIALIZING__");
+
 	var MODULE_CB = [];
 	var MODULE_MAP = {};
 	var MODULE_PENDING = {};
@@ -223,12 +229,10 @@ window.utils = function(utils){
 		}
 		var files = [];
 		for(var i = 0; i < arguments.length; i++){
-			console.log("---",arguments[i],utils.files.BUNDLES[arguments[i]]);
 			if(utils.files.BUNDLES[arguments[i]]){
 				files = createPackList(arguments[i],utils.files.BUNDLES,files);	
 			}
 		}
-		console.log("--",pack,files);
 		utils.require.apply(this,files);
 	};
 	
@@ -304,12 +308,13 @@ window.utils = function(utils){
 		if(_READY_) return _READY_.push(cb);
 		else return cb();
 	};
-	utils.ready(function(){
+	utils.scan_scripts = function(){
+		console.info("scannnig script tags...");
 		var scripts = document.getElementsByTagName('script');
 		for(var i=0; i<scripts.length;i++){
 			if(!scripts[i].loaded){
 				if(scripts[i].src && !scripts[i].getAttribute('loaded')){
-					var p = utils.files.getInfo((scripts[i].src).replace(document.location.origin,''));
+					var p = utils.files.getInfo((scripts[i].src).replace(document.location.origin,'').replace(utils.config.contextPath,"/"));
 					var cleanSRC = p.url.replace(document.location.origin,'');
 					utils.files.LOADED[cleanSRC] = cleanSRC
 					MODULE_MAP[p.module] = MODULE_MAP[p.module] || (!MODULE_PENDING[p.module] ? {} : null);
@@ -317,8 +322,11 @@ window.utils = function(utils){
 				}
 			}
 		}
-	});
+	}
+	utils.ready(utils.scan_scripts);
+	
 	$(document).ready(function(){
+		console.info("document..ready...")
 		while(_READY_.length){
 			_READY_[0](); _READY_.splice(0,1);
 		} _READY_ = null;
@@ -337,9 +345,10 @@ window.utils = function(utils){
 				});
 			} else utils.files.loadJSFile(utils.config.bundles)
 		}
+		utils.scan_scripts();
 	};
 	return utils;
-}({});
+}(window.utils || {});
 
 utils.define('utils.config', function(config) {
 	config.combine = true;
@@ -352,6 +361,7 @@ utils.define('utils.config', function(config) {
 		}
 	};
 	config.set = function(options){
+		console.info("setting configuration...");
 		CONTEXT_PATH = options.contextPath ? ("/"+trimSlashes(options.contextPath) + "/") : CONTEXT_PATH;
 		RESOURCE_PATH =  (options.contextPath && options.resourcePath)
 							? ('/' + trimSlashes(options.contextPath) 
@@ -377,7 +387,7 @@ utils.define('utils.config', function(config) {
 		utils.on_config_ready();
 	}
 });
-
+console.info('files.....')
 utils.define('utils.files', function(files) {
 	var config = utils.config;
 	files.MODULES = {};
@@ -387,12 +397,12 @@ utils.define('utils.files', function(files) {
     
 	files.update = function(packs){
 		for(var pack in packs){
-			if(!this.BUNDLES[pack]){
+			if(!files.BUNDLES[pack]){
 				this.BUNDLES[pack] = packs[pack];
-				for(var i in this.BUNDLES[pack].files){
-					var p = this.getInfo(this.BUNDLES[pack].files[i]);
+				for(var i in files.BUNDLES[pack].files){
+					var p = files.getInfo(this.BUNDLES[pack].files[i]);
 					if(p && p.isJS){
-						this.MODULES[p.module] = p;
+						files.MODULES[p.module] = p;
 					}
 				}
 			}
