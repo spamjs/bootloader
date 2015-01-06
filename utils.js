@@ -120,7 +120,7 @@ window.utils = function(utils){
 			}
 			//console.info(utils.status.done(),"ASDONE",this.module,this._parent_)
 		} else {
-			throw new Error("Module Definition" + this.module + 'already Exists ' 
+			throw new Error("Module Definition " + this.module + ' already Exists ' 
 					+ 'module can have only one definition')
 		}
 		return this;
@@ -314,7 +314,7 @@ window.utils = function(utils){
 		for(var i=0; i<scripts.length;i++){
 			if(!scripts[i].loaded){
 				if(scripts[i].src && !scripts[i].getAttribute('loaded')){
-					var p = utils.files.getInfo((scripts[i].src).replace(document.location.origin,'').replace(utils.config.contextPath,"/"));
+					var p = utils.files.getInfo((scripts[i].src).replace(document.location.origin,''));
 					var cleanSRC = p.url.replace(document.location.origin,'');
 					utils.files.LOADED[cleanSRC] = cleanSRC
 					MODULE_MAP[p.module] = MODULE_MAP[p.module] || (!MODULE_PENDING[p.module] ? {} : null);
@@ -332,7 +332,6 @@ window.utils = function(utils){
 		} _READY_ = null;
 	});
 	utils.on_config_ready = function(){
-		
 		if(utils.config.bundles!==undefined){
 			if(utils.config.bundles.endsWith('.json')){
 				$.ajax({
@@ -387,11 +386,11 @@ utils.define('utils.config', function(config) {
 		utils.on_config_ready();
 	}
 });
-console.info('files.....')
 utils.define('utils.files', function(files) {
 	var config = utils.config;
 	files.MODULES = {};
 	files.LOADED = {};
+	files.LOADING = {};
 	files.BUNDLES = {};
     files.DIR_MATCH = {};
     
@@ -443,10 +442,10 @@ utils.define('utils.files', function(files) {
     	this.rpath = path;
     };
     files.loadJSFile = function(js){
-        $('head').append('<script loaded=true src="' + js + '" type="text/javascript"></script>');
+    	$('head').append('<script loaded=true src="' + js + '" type="text/javascript"></script>');
     };
     files.loadCSSFile = function(css){
-        $('head').append('<link loaded=true href="' + css + '" type="text/css" rel=stylesheet></link>');
+    	$('head').append('<link loaded=true href="' + css + '" type="text/css" rel=stylesheet></link>');
     };
     files.loadFiles = function() {
     	var args, jslist=[],csslist=[],cb;
@@ -469,7 +468,7 @@ utils.define('utils.files', function(files) {
     	files.loadCss(csslist,cb);
     };
     files.loadJs = function(list,cb){
-    	if(config.combine && list.length){
+    	if(config.combineJS && list.length){
     		$.ajax({
     			async: false,
     			url: RESOURCE_PATH + 'combine.js?@='+list.join(','),
@@ -484,14 +483,17 @@ utils.define('utils.files', function(files) {
     		});
     	} else {
     		for(var i in list){
-    			files.loadJSFile(list[i]);
-    			files.LOADED[list[i]] = list[i];
+    			if(!files.LOADING[list[i]]){
+        			files.LOADING[list[i]] = list[i];
+        			files.loadJSFile(list[i]);    			
+        			files.LOADED[list[i]] = list[i];
+    			}
     		}
     		if(cb) cb();
     	} 
     };
     files.loadCss = function(list,cb){
-    	if(config.combine && list.length){
+    	if(config.combineCSS && list.length){
     		$.ajax({
     			async: true,
     			url: RESOURCE_PATH + 'combine.css?@='+list.join(','),
@@ -504,8 +506,11 @@ utils.define('utils.files', function(files) {
     		});
     	} else {
     		for(var i in list){
-    			files.loadCSSFile(list[i]);
-    			files.LOADED[list[i]] = list[i];
+    			if(!files.LOADING[list[i]]){
+        			files.LOADING[list[i]] = list[i];
+        			files.loadCSSFile(list[i]);    			
+        			files.LOADED[list[i]] = list[i];
+    			}
     		}
     	} 
     };

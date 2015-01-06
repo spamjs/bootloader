@@ -1,5 +1,5 @@
 utils.define('utils.odo', function(odo, _instance_) {
-	utils.require('utils.executable');
+	utils.module('utils.executable');
 	//Data Change Event
 	odo.dataEvent = function dataEvent(index, keys, key, value) {
 		this.index = index;
