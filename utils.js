@@ -73,7 +73,18 @@ window.utils = function(utils){
 			});
 		}
 	}
-	
+	var ClassPath = function ClassPath(_dir_,_file_){
+		this._dir_ = _dir_;
+		this._file_ = _file_ || "";
+		this._file_path_ = utils.url.resolve(this._file_,this._dir_);
+	};
+	ClassPath.prototype.get = function(cb){
+		 $.get(this._file_path_,cb);
+		 return this;
+	};
+	ClassPath.prototype.toString = function(){
+		return this._file_path_;
+	};
 	var ModuleClass = function ModuleClass (moduleName){
 		this.module = moduleName;
 		this._hasExtened_ = {};
@@ -152,7 +163,9 @@ window.utils = function(utils){
 	ModuleClass.prototype.requires = function(){
 		
 	};
-	
+	ModuleClass.prototype.getPath = function(_file_){
+		return new ClassPath(this._dir_,_file_);
+	};
 	utils.extend = function(fromString){
 		return utils.define().extend(fromString);
 	};

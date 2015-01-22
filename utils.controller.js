@@ -1,26 +1,31 @@
 utils.define('utils.controller', function(controller){
-	controller.hash;
-	controller.load = function(obj){
-		return $.ajax(obj);
-	};
+	
+	var executable = utils.module("utils.executable");
+	var pathname, hash;
 	controller.hashchange = function(){
-		if (this.hash != document.location.hash) {
-			this.hash = document.location.hash;
-			this.invoke(this.hash.substr(1));
-			return true;
-		} else
-			return false;
+		var _path = document.location.pathname
+		var _hash = document.location.hash;
+		if (hash != document.location.hash) {
+			hash = document.location.hash;
+			this.invoke(hash);
+		}
+		if (pathname != document.location.pathname) {
+			pathname = document.location.pathname;
+			this.invoke(pathname);
+		}
 	};
 	
 	controller.cache = {};
 	controller.onchange_map = {};
 	controller.refineKey = function(_key){
+		return _key.replace(/\{(.*?)\}/gi,'*')
 		return _key;// .replace(/\[/gi, '#').replace(/\]/gi, '');
 	};
 	controller.split = function(key){
 		return key.split(/[\/]+/gi);
 	};
 	controller.invoke = function(_key){
+		console.warn("invokd..",_key)
 		var key = this.refineKey(_key);
 		return this.callFun(key);
 	};
@@ -41,7 +46,11 @@ utils.define('utils.controller', function(controller){
 			ref = ref[_atKey];
 		}
 		ref['@' + _nextKey] = {
-			key : _nextKey, next : fun, isHTTP : isHTTP, nextKey : null
+			fun : fun,
+			key : _nextKey, next : function(o){
+				console.warn("oo",o)
+				this.fun.apply(controller,o.arg)
+			}, isHTTP : isHTTP, nextKey : null
 		};
 	};
 
@@ -72,7 +81,7 @@ utils.define('utils.controller', function(controller){
 		this.onchange_map[key] = true;
 		// return this._callFun(key);
 		var THIS = this;
-		utils.executeOnce(function(){
+		executable.once(function(){
 			THIS.trigger();
 		});
 	};
@@ -83,10 +92,25 @@ utils.define('utils.controller', function(controller){
 			delete this.onchange_map[key]
 		}
 	};
+	controller.go = function(url){
+		return window.history.pushState(null,null,url);
+	};
 	controller._ready_ = function(){
-		$(window).on('hashchange', function(e){
-			return controller.hashchange();
-		});
+	    var pushState = history.pushState;
+	    
+	    history.pushState = function(state) {
+	    	console.warn("url pusing",state);
+	        if (typeof history.onpushstate == "function") {
+	           // history.onpushstate({state: state});
+	        }
+	        var ret = pushState.apply(history, arguments);
+	        controller.hashchange();
+	        return ret;
+	    }
+		window.onpopstate = history.onpushstate = function(e) {
+			console.warn("url changed",e);
+			controller.hashchange();
+		}
 		return controller.hashchange();
 	}
 });
