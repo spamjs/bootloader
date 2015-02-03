@@ -4,10 +4,7 @@ utils.config.set({
 	resourcePath : 'resources',
 	dataPath : 'data',
 	moduleDir : {
-		'dff.*' : 'dff/models/',
-		'utils.*' : '../libs/jqgeeks/utils/'
 	},
-	template : 'folder',
 	combine : true,
 	TAG_ATTR : {
 		DATA_PATH : 'rx-path',
