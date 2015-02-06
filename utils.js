@@ -82,6 +82,7 @@ window.utils = function(utils){
 		 $.get(this._file_path_,cb);
 		 return this;
 	};
+	ClassPath.prototype.load = ClassPath.prototype.get;
 	ClassPath.prototype.toString = function(){
 		return this._file_path_;
 	};
@@ -569,6 +570,7 @@ utils.define('utils.url', function(url) {
     	}
 	};
 	url.clean = function(url){
+		url = url.replace(/[\/]+/g,'/');
 		var ars = url.split('/');
 		var domain = ars.shift();
 		var parents = [];
