@@ -120,6 +120,9 @@ window.utils = function(utils){
 			if(this.parent()!==undefined && this.parent()._extended_){
 				this.parent()._extended_(this,this.proto_object);
 			}
+			if(this._config_ && utils.config){
+				this._config_(utils.config.get(this.module))
+			}
 			if(this._ready_){
 				utils.ready(function(){
 					try{
@@ -397,7 +400,10 @@ utils.define('utils.config', function(config) {
 		config.bundles = options.bundle_list || options.bundles;
 		$.ajaxPrefilter(config.ajaxPrefilter);
 		utils.on_config_ready();
-	}
+	};
+	config.get = function(moduleName){
+		return this[moduleName] || {};
+	};
 });
 utils.define('utils.files', function(files) {
 	var config = utils.config;
