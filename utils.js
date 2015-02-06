@@ -79,10 +79,12 @@ window.utils = function(utils){
 		this._file_path_ = utils.url.resolve(this._file_,this._dir_);
 	};
 	ClassPath.prototype.get = function(cb){
-		 $.get(this._file_path_,cb);
+		 this.load().done(cb);
 		 return this;
 	};
-	ClassPath.prototype.load = ClassPath.prototype.get;
+	ClassPath.prototype.load = function(){
+		return $.get(this._file_path_);
+	};
 	ClassPath.prototype.toString = function(){
 		return this._file_path_;
 	};
