@@ -124,7 +124,7 @@ window.utils = function(utils){
 				this.parent()._extended_(this,this.proto_object);
 			}
 			if(this._config_ && utils.config){
-				this._config_(utils.config.get(this.module))
+				this._config_(utils.config.getModuleConfig(this.module))
 			}
 			if(this._ready_){
 				utils.ready(function(){
@@ -379,6 +379,7 @@ utils.define('utils.config', function(config) {
 		}
 	};
 	config.set = function(options){
+		this.moduleConfig = options.moduleConfig || {};
 		console.info("setting configuration...");
 		CONTEXT_PATH = options.contextPath ? ("/"+trimSlashes(options.contextPath) + "/") : CONTEXT_PATH;
 		RESOURCE_PATH =  (options.contextPath && options.resourcePath)
@@ -406,6 +407,9 @@ utils.define('utils.config', function(config) {
 	};
 	config.get = function(moduleName){
 		return this[moduleName] || {};
+	};
+	config.getModuleConfig = function(moduleName){
+		return this.spam[moduleName] || {};
 	};
 });
 utils.define('utils.files', function(files) {
