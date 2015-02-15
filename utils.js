@@ -77,6 +77,7 @@ window.utils = function(utils){
 		this._dir_ = _dir_;
 		this._file_ = _file_ || "";
 		this._file_path_ = utils.url.resolve(this._file_,this._dir_);
+		this._resolved_path_ = this._dir_;
 	};
 	ClassPath.prototype.get = function(cb){
 		 this.load().done(cb);
@@ -88,6 +89,16 @@ window.utils = function(utils){
 	ClassPath.prototype.toString = function(){
 		return this._file_path_;
 	};
+	ClassPath.prototype.resetPath = function(){
+		this._file_path_;
+		var dirs = this._file_path_.split('/');
+		dirs.pop();
+		this._resolved_path_ = dirs.join('/');
+		return this;
+	};
+	
+	utils.ClassPath = ClassPath;
+	
 	var ModuleClass = function ModuleClass (moduleName){
 		this.module = moduleName;
 		this._hasExtened_ = {};
