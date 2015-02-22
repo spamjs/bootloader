@@ -73,18 +73,19 @@ window.utils = function(utils){
 			});
 		}
 	}
-	var ClassPath = function ClassPath(_dir_,_file_){
+	var ClassPath = function ClassPath(_dir_,_file_,data){
 		this._dir_ = _dir_;
 		this._file_ = _file_ || "";
 		this._file_path_ = utils.url.resolve(this._file_,this._dir_);
 		this._resolved_path_ = this._dir_;
+		this._data_ = data;
 	};
 	ClassPath.prototype.get = function(cb){
-		 this.load().done(cb);
+		 this.load(this._data_).done(cb);
 		 return this;
 	};
-	ClassPath.prototype.load = function(){
-		return $.get(this._file_path_);
+	ClassPath.prototype.load = function(data){
+		return $.get(this._file_path_,data || this._data_);
 	};
 	ClassPath.prototype.toString = function(){
 		return this._file_path_;
@@ -98,6 +99,7 @@ window.utils = function(utils){
 	};
 	
 	utils.ClassPath = ClassPath;
+	ClassPath.prototype._type_ = ClassPath.name;
 	
 	var ModuleClass = function ModuleClass (moduleName){
 		this.module = moduleName;
@@ -180,9 +182,13 @@ window.utils = function(utils){
 	ModuleClass.prototype.requires = function(){
 		
 	};
-	ModuleClass.prototype.getPath = function(_file_){
-		return new ClassPath(this._dir_,_file_);
+	ModuleClass.prototype.getPath = function(_file_,data){
+		return new ClassPath(this._dir_,_file_,data);
 	};
+	ModuleClass.prototype.getContextPath = function(_file_,data){
+		return new ClassPath(utils.config.contextPath,_file_,data);
+	};
+	utils.getContextPath = ModuleClass.prototype.getContextPath;
 	utils.extend = function(fromString){
 		return utils.define().extend(fromString);
 	};
@@ -236,6 +242,7 @@ window.utils = function(utils){
 	
 	var createPackList = function(pack,from,to){
 		if(!from[pack]) return to;
+		console.info("to",to,from[pack]['@'])
 		for(var i in from[pack]['@']){
 			to = createPackList(from[pack]['@'][i],from,to);
 		}
@@ -263,6 +270,7 @@ window.utils = function(utils){
 				files = createPackList(arguments[i],utils.files.BUNDLES,files);	
 			}
 		}
+		console.log(utils.files.BUNDLES,arguments,files)
 		utils.require.apply(this,files);
 	};
 	
