@@ -6,7 +6,7 @@ window.utils = function(utils){
 	console.info("__INTIALIZING__");
 
 	var MODULE_CB = [];
-	var MODULE_MAP = {};
+	var MODULE_MAP = {},PROXY_MAP = {};
 	var MODULE_PENDING = {};
 	var CONTEXT_PATH = "/";
 	var RESOURCE_PATH = "/res";
@@ -72,7 +72,30 @@ window.utils = function(utils){
 				};
 			});
 		}
+	};
+	
+	var mixin = function(source) {
+		for (var k in source) {
+			if (source.hasOwnProperty(k)) {
+				this[k] = source[k];
+			}
+		}
+		return this; 
+	};
+	
+	var selectNameSpace = function(nameSpace,valObj){
+		var nspace = nameSpace.split('.');
+		var win = window;
+		var retspace = nspace[0];
+		for(var i =0; i<nspace.length-1; i++){
+			if (!win[nspace[i]]) win[nspace[i]] = {};
+			retspace = nspace[i];
+			win = win[retspace];
+		}
+		return win[nspace[nspace.length-1]] = valObj;
 	}
+	
+	//CLASS PATH HAS BEEN MOVED TO NEW MODUEL
 	var ClassPath = function ClassPath(_dir_,_file_,data){
 		this._dir_ = _dir_;
 		this._file_ = _file_ || "";
@@ -85,7 +108,7 @@ window.utils = function(utils){
 		 return this;
 	};
 	ClassPath.prototype.load = function(data){
-		return $.get(this._file_path_,data || this._data_);
+		return utils.files.get(this._file_path_,data || this._data_);
 	};
 	ClassPath.prototype.toString = function(){
 		return this._file_path_;
@@ -97,9 +120,11 @@ window.utils = function(utils){
 		this._resolved_path_ = dirs.join('/');
 		return this;
 	};
-	
-	utils.ClassPath = ClassPath;
 	ClassPath.prototype._type_ = ClassPath.name;
+	
+	utils.getClassPath = function (_dir_,_file_,data){
+		return new ClassPath(_dir_,_file_,data);
+	}
 	
 	var ModuleClass = function ModuleClass (moduleName){
 		this.module = moduleName;
@@ -163,6 +188,7 @@ window.utils = function(utils){
 		}
 		return this;
 	};
+	
 	ModuleClass.prototype.parent = function(){
 		return MODULE_MAP[this._parent_];
 	};
@@ -188,9 +214,31 @@ window.utils = function(utils){
 	ModuleClass.prototype.getContextPath = function(_file_,data){
 		return new ClassPath(utils.config.contextPath,_file_,data);
 	};
+	ModuleClass.prototype.mixin = mixin;
+	
 	utils.getContextPath = ModuleClass.prototype.getContextPath;
 	utils.extend = function(fromString){
 		return utils.define().extend(fromString);
+	};
+	utils.intercept = function(classPath){
+		return utils.proxy().intercept(classPath);
+	};
+	
+	var ProxyClass = function ProxyClass(moduleName){
+		this.module = moduleName;
+	};
+	ProxyClass.prototype.intercept = function(toClass){
+		utils.loadModule(toClass);
+		this._intercept_ = toClass;
+		MODULE_MAP[this.module] = MODULE_MAP[this._intercept_]
+		return this;
+	};
+	ProxyClass.prototype.as = function(cb){
+		cb(MODULE_MAP[this._intercept_],MODULE_MAP[this._intercept_].proto_object,this);
+		if(this._config_ && utils.config){
+			this._config_(utils.config.getModuleConfig(this.module))
+		}
+		return  this;
 	};
 
 	 /**
@@ -218,6 +266,7 @@ window.utils = function(utils){
 				 * module is created in global namespace and returned to caller.
 				 */
 				if(!MODULE_MAP[classPath] || !MODULE_MAP[classPath]._define_) {
+					/*
 					var nspace = classPath.split('.');
 					var win = window;
 					var retspace = nspace[0];
@@ -227,6 +276,8 @@ window.utils = function(utils){
 						win = win[retspace];
 					}
 					MODULE_MAP[classPath] = win[nspace[nspace.length-1]] = new ModuleClass(classPath);
+					*/
+					MODULE_MAP[classPath] = selectNameSpace(classPath,new ModuleClass(classPath));
 				} //else throw new Error("Cannot redefine "+classPath + " as it already exists");
 				if(MODULE_MAP[classPath] && asFun && typeof asFun == 'function'){
 					MODULE_MAP[classPath].as(asFun);
@@ -240,9 +291,16 @@ window.utils = function(utils){
 		}
 	};
 	
+	utils.proxy = function(classPath){
+		if(!classPath){
+			return new ProxyClass('anonymous');
+		} else {
+			return PROXY_MAP[classPath] = selectNameSpace(classPath,new ProxyClass(classPath));
+		}
+	};
+	
 	var createPackList = function(pack,from,to){
 		if(!from[pack]) return to;
-		console.info("to",to,from[pack]['@'])
 		for(var i in from[pack]['@']){
 			to = createPackList(from[pack]['@'][i],from,to);
 		}
@@ -270,7 +328,6 @@ window.utils = function(utils){
 				files = createPackList(arguments[i],utils.files.BUNDLES,files);	
 			}
 		}
-		console.log(utils.files.BUNDLES,arguments,files)
 		utils.require.apply(this,files);
 	};
 	
@@ -341,10 +398,9 @@ window.utils = function(utils){
 			start : function(){ var x =this.me; this.me+="="; return x;},
 			done : function(){ this.me = this.me.replace('=','');return this.me;}
 	}
-	var _READY_ = [];
+	var _READY_ = $.Deferred();
 	utils.ready = function(cb){
-		if(_READY_) return _READY_.push(cb);
-		else return cb();
+		_READY_.promise().done(cb)
 	};
 	utils.scan_scripts = function(){
 		console.info("scannnig script tags...");
@@ -352,11 +408,20 @@ window.utils = function(utils){
 		for(var i=0; i<scripts.length;i++){
 			if(!scripts[i].loaded){
 				if(scripts[i].src && !scripts[i].getAttribute('loaded')){
-					var p = utils.files.getInfo((scripts[i].src).replace(document.location.origin,''));
-					var cleanSRC = p.url.replace(document.location.origin,'');
-					utils.files.LOADED[cleanSRC] = cleanSRC
-					MODULE_MAP[p.module] = MODULE_MAP[p.module] || (!MODULE_PENDING[p.module] ? {} : null);
-					MODULE_MAP[p.module]._dir_ = p.dir;
+					var srcs = [];
+					if(scripts[i].src.indexOf("@=")>-1){
+						srcs = scripts[i].src.split("@=")[1];
+						srcs = srcs.split(",");
+					} else {
+						srcs = [scripts[i].src];
+					}
+					srcs.map(function(src){
+						var p = utils.files.getInfo((src).replace(document.location.origin,''));
+						var cleanSRC = p.url.replace(document.location.origin,'');
+						utils.files.LOADED[cleanSRC] = cleanSRC
+						MODULE_MAP[p.module] = MODULE_MAP[p.module] || (!MODULE_PENDING[p.module] ? {} : null);
+						MODULE_MAP[p.module]._dir_ = p.dir;						
+					});
 				}
 			}
 		}
@@ -364,10 +429,8 @@ window.utils = function(utils){
 	utils.ready(utils.scan_scripts);
 	
 	$(document).ready(function(){
-		console.info("document..ready...")
-		while(_READY_.length){
-			_READY_[0](); _READY_.splice(0,1);
-		} _READY_ = null;
+		console.info("document..ready...");
+		_READY_.resolve();
 	});
 	utils.on_config_ready = function(){
 		if(utils.config.bundles!==undefined){
@@ -376,6 +439,7 @@ window.utils = function(utils){
 					  url: utils.config.bundles,
 					  dataType: 'json',
 					  async: false,
+					  cache : true,
 					  success: function(resp) {
 							utils.updateBundle(resp.bundles);
 					  }
@@ -428,7 +492,7 @@ utils.define('utils.config', function(config) {
 		return this[moduleName] || {};
 	};
 	config.getModuleConfig = function(moduleName){
-		return this.spam[moduleName] || {};
+		return this.moduleConfig[moduleName] || {};
 	};
 });
 utils.define('utils.files', function(files) {
@@ -438,6 +502,7 @@ utils.define('utils.files', function(files) {
 	files.LOADING = {};
 	files.BUNDLES = {};
     files.DIR_MATCH = {};
+    files.script_rendered = false;
     
 	files.update = function(packs){
 		for(var pack in packs){
@@ -460,10 +525,11 @@ utils.define('utils.files', function(files) {
 			}
 		} return module;
 	}
-    files.getInfo = function(path){
-    	if(files.MODULES[path]) {
-    		return files.MODULES[path];
+    files.getInfo = function(_path){
+    	if(files.MODULES[_path]) {
+    		return files.MODULES[_path];
     	}
+    	var path = _path.split("?")[0];
     	var isJS = path.endsWith('.js');
     	var isCSS = path.endsWith('.css');
     	if(!isJS && !isCSS) {
@@ -512,20 +578,45 @@ utils.define('utils.files', function(files) {
     	files.loadJs(jslist,cb);
     	files.loadCss(csslist,cb);
     };
+    
+    files._jsload_ = function(resource){
+    	return $.ajax({
+			async: resource.async || false,
+			url: resource.url,
+			dataType: resource.dataType || "script",
+			cache : resource.cache || true
+		});
+    };
+    
+    files.prepare_js_request = function(module_files){
+		var params = module_files.join(',');
+		var encoded = utils.string.encode64(params);
+		var url = (
+				(config.mergeJS && (typeof config.mergeJS === 'function' ? config.mergeJS(params,encoded) : config.mergeJS))|| 
+				(RESOURCE_PATH + 'combine.js')
+			)+'?@='+params;
+		return {
+			module_files : module_files,
+			url: url,
+			params : params,
+			encoded : encoded
+		};
+    };
+    
     files.loadJs = function(list,cb){
+    	if(!files.script_rendered){
+    		utils.scan_scripts();
+    	}
     	if(config.combineJS && list.length){
-    		$.ajax({
-    			async: false,
-    			url: RESOURCE_PATH + 'combine.js?@='+list.join(','),
-    			dataType: "script",
-    			cache : true,
-    			complete : function(){
-    				for(var i in list){
-    					files.LOADED[list[i]] = list[i];
-    				}
-    				if(cb) cb();
-    			}
-    		});
+        	list = list.filter(function(module_file){
+        		return !files.LOADED[module_file];
+        	});
+    		files._jsload_(files.prepare_js_request(list)).always(function(resp){
+				for(var i in list){
+					files.LOADED[list[i]] = list[i];
+				}
+				if(cb) cb();
+			});
     	} else {
     		for(var i in list){
     			if(!files.LOADING[list[i]]){
@@ -559,6 +650,12 @@ utils.define('utils.files', function(files) {
     		}
     	} 
     };
+    files.get = function(){
+    	return $.get.apply(this,arguments);
+    };
+	utils.ready(function(){
+		files.script_rendered = true
+	});
 });
 
 utils.define('utils.url', function(url) {
@@ -615,3 +712,76 @@ utils.define('utils.url', function(url) {
 		return (domain +  '/'  + parents.join( '/')).replace(/(\/)+/g,'/');
 	};
 });
+
+utils.define('utils.string',function(string){
+	
+	var keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+	string.encode64 = function(input) {
+	     input = escape(input);
+	     var output = "";
+	     var chr1, chr2, chr3 = "";
+	     var enc1, enc2, enc3, enc4 = "";
+	     var i = 0;
+	     do {
+	        chr1 = input.charCodeAt(i++); chr2 = input.charCodeAt(i++); chr3 = input.charCodeAt(i++);
+	        enc1 = chr1 >> 2; enc2 = ((chr1 & 3) << 4) | (chr2 >> 4); enc3 = ((chr2 & 15) << 2) | (chr3 >> 6); enc4 = chr3 & 63;
+
+	        if (isNaN(chr2)) {
+	           enc3 = enc4 = 64;
+	        } else if (isNaN(chr3)) {
+	           enc4 = 64;
+	        }
+	        output = output +
+	        	keyStr.charAt(enc1) +
+	           keyStr.charAt(enc2) +
+	           keyStr.charAt(enc3) +
+	           keyStr.charAt(enc4);
+	        chr1 = chr2 = chr3 = "";
+	        enc1 = enc2 = enc3 = enc4 = "";
+	     } while (i < input.length);
+	     return output;
+	  }
+
+	string.decode64 = function(input) {
+	     var output = "";
+	     var chr1, chr2, chr3 = "";
+	     var enc1, enc2, enc3, enc4 = "";
+	     var i = 0;
+
+	     // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
+	     var base64test = /[^A-Za-z0-9\+\/\=]/g;
+	     if (base64test.exec(input)) {
+	        throw ("There were invalid base64 characters in the input text.\n" +
+	              "Valid base64 characters are A-Z, a-z, 0-9, '+', '/',and '='\n" +
+	              "Expect errors in decoding.");
+	     }
+	     input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+
+	     do {
+	        enc1 = keyStr.indexOf(input.charAt(i++));
+	        enc2 = keyStr.indexOf(input.charAt(i++));
+	        enc3 = keyStr.indexOf(input.charAt(i++));
+	        enc4 = keyStr.indexOf(input.charAt(i++));
+
+	        chr1 = (enc1 << 2) | (enc2 >> 4);
+	        chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+	        chr3 = ((enc3 & 3) << 6) | enc4;
+
+	        output = output + String.fromCharCode(chr1);
+
+	        if (enc3 != 64) {
+	           output = output + String.fromCharCode(chr2);
+	        }
+	        if (enc4 != 64) {
+	           output = output + String.fromCharCode(chr3);
+	        }
+
+	        chr1 = chr2 = chr3 = "";
+	        enc1 = enc2 = enc3 = enc4 = "";
+
+	     } while (i < input.length);
+
+	     return unescape(output);
+	  }
+})
