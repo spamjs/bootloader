@@ -134,6 +134,13 @@ window.utils = function(utils){
 		if(!this.hasOwnProperty('_define_') ){
 			var self = this;
 			this._define_ = _define_;
+			var matches = _define_.toString().match(/utils\.module\(([^)]+)*\)/g);
+			if(matches){
+				var reqModules = matches.map(function(mod){
+					return mod.replace(/utils\.module\(|\"|\'|\)/g,"");
+				});
+				utils.require.apply(utils,reqModules);
+			}
 			//Prepraring Prototype
 			var _protos_ = getPrototype(this._parent_);
 			//console.info(utils.status.start(),"ASTART",this.module,this._parent_,_protos_)
