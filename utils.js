@@ -9,7 +9,6 @@ window.utils = function(utils){
 	var MODULE_MAP = {},PROXY_MAP = {};
 	var MODULE_PENDING = {};
 	var CONTEXT_PATH = "/";
-	var RESOURCE_PATH = "/res";
 	
 	utils.getAll = function(){
 		return [MODULE_CB,MODULE_MAP,MODULE_PENDING]
@@ -472,10 +471,10 @@ utils.define('utils.config', function(config) {
 		this.moduleConfig = options.moduleConfig || {};
 		console.info("setting configuration...");
 		CONTEXT_PATH = options.contextPath ? ("/"+trimSlashes(options.contextPath) + "/") : CONTEXT_PATH;
-		RESOURCE_PATH =  (options.contextPath && options.resourcePath)
+		config.RESOURCE_PATH =  (options.contextPath && options.resourcePath)
 							? ('/' + trimSlashes(options.contextPath) 
 									+ '/' +trimSlashes(options.resourcePath) + '/') 
-							: RESOURCE_PATH;
+							: config.RESOURCE_PATH;
 		config.combine = (options.combine!=undefined) ? options.combine : config.combine;
 		if(options.moduleDir){
 			for(var reg in options.moduleDir){
@@ -594,13 +593,15 @@ utils.define('utils.files', function(files) {
 			cache : resource.cache || true
 		});
     };
-    
+    files.encrypt_list = function(module_files){
+    	return "merged"+module_files[0].replace("\/","_",'g'); //utils.string.encode64(params);
+    };
     files.prepare_js_request = function(module_files){
 		var params = module_files.join(',');
-		var encoded = "merged"+module_files[0].replace("\/","_",'g'); //utils.string.encode64(params);
+		var encoded = files.encrypt_list(module_files);
 		var url = (
 				(config.mergeJS && (typeof config.mergeJS === 'function' ? config.mergeJS(params,encoded) : config.mergeJS))|| 
-				(RESOURCE_PATH + 'combine.js')
+				(utils.config.RESOURCE_PATH + 'combine.js')
 			)+'?@='+params;
 		return {
 			module_files : module_files,
@@ -639,7 +640,7 @@ utils.define('utils.files', function(files) {
     	if(config.combineCSS && list.length){
     		$.ajax({
     			async: true,
-    			url: RESOURCE_PATH + 'combine.css?@='+list.join(','),
+    			url: utils.config.RESOURCE_PATH + 'combine.css?@='+list.join(','),
     			complete : function(){
     				for(var i in list){
     					files.LOADED[list[i]] = list[i];
