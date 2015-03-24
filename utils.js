@@ -337,7 +337,7 @@ window.utils = function(utils){
 		utils.require.apply(this,files);
 	};
 	
-	utils.module = function(classPath){
+	utils._module =  utils.module = function(classPath){
 		if(!MODULE_MAP[classPath]){
 			var info = utils.files.getInfo(classPath);
 			if(!MODULE_MAP[info.module]){
