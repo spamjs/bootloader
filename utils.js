@@ -564,6 +564,9 @@ utils.define('utils.files', function(files) {
     files.loadCSSFile = function(css){
     	$('head').append('<link loaded=true href="' + css + '" type="text/css" rel=stylesheet></link>');
     };
+    files.addStyle = function(css){
+    	$('head').append('<style type="text/css" rel=stylesheet>'+css+'</style>');
+    };
     files.loadFiles = function() {
     	var args, jslist=[],csslist=[],cb;
     	if(typeof arguments[0] === 'string'){
@@ -592,6 +595,9 @@ utils.define('utils.files', function(files) {
 			dataType: resource.dataType || "script",
 			cache : resource.cache || true
 		});
+    };
+    files._cssload_ = function(resource){
+    	return $.get(resource.url);
     };
     files.encrypt_list = function(module_files){
     	return "merged"+module_files[0].replace("\/","_",'g'); //utils.string.encode64(params);
@@ -652,7 +658,10 @@ utils.define('utils.files', function(files) {
     		for(var i in list){
     			if(!files.LOADING[list[i]]){
         			files.LOADING[list[i]] = list[i];
-        			files.loadCSSFile(list[i]);    			
+        			files._cssload_({ url : list[i]}).done(function(resp){
+        				files.addStyle(resp);
+        			});
+        			//files.loadCSSFile(list[i]);    			
         			files.LOADED[list[i]] = list[i];
     			}
     		}
