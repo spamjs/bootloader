@@ -59,17 +59,20 @@ window.utils = function(utils){
 		return defObj;
 	};
 	
+	var AbstractModule = utils.AbstractModule = function AbstractModule(){
+		
+	};
+	AbstractModule.prototype.parent = function(fun){
+		if(fun===undefined)
+			return Object.getPrototypeOf(this);
+		return Object.getPrototypeOf(this)[fun].bind(this);
+	};
+	
 	var getPrototype = function(fromString){
 		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._instance_){
 			return MODULE_MAP[fromString].instance();
 		} else {
-			return new (function(){
-				this.parent = function(fun){
-					if(fun===undefined)
-						return Object.getPrototypeOf(this);
-					return Object.getPrototypeOf(this)[fun].bind(this);
-				};
-			});
+			return new AbstractModule();
 		}
 	};
 	
@@ -168,7 +171,7 @@ window.utils = function(utils){
 				this.parent()._extended_(this,this.proto_object);
 			}
 			if(this._config_ && utils.config){
-				this._config_(utils.config.getModuleConfig(this.module))
+				this._config_(utils.config.getModuleConfig(this.module),utils.config.get())
 			}
 			if(this._ready_){
 				utils.ready(function(){
@@ -218,7 +221,7 @@ window.utils = function(utils){
 		return new ClassPath(this._dir_,_file_,data);
 	};
 	ModuleClass.prototype.getContextPath = function(_file_,data){
-		return new ClassPath(utils.config.contextPath,_file_,data);
+		return new ClassPath(utils.config.get().contextPath,_file_,data);
 	};
 	ModuleClass.prototype.mixin = mixin;
 	
@@ -242,7 +245,7 @@ window.utils = function(utils){
 	ProxyClass.prototype.as = function(cb){
 		cb(MODULE_MAP[this._intercept_],MODULE_MAP[this._intercept_].proto_object,this);
 		if(this._config_ && utils.config){
-			this._config_(utils.config.getModuleConfig(this.module))
+			this._config_(utils.config.getModuleConfig(this.module),utils.config.get())
 		}
 		return  this;
 	};
@@ -324,7 +327,7 @@ window.utils = function(utils){
 				pack_list.push(arguments[i]);	
 			}
 		}
-		if(pack_list.length && utils.config.resolve_bundles){
+		if(pack_list.length && utils.config.get().resolve_bundles){
 			utils.files.loadJSFile('resources.json?cb=utils.updateBundle&$='
 					+pack_list.join(','));
 		}
@@ -439,10 +442,10 @@ window.utils = function(utils){
 		_READY_.resolve();
 	});
 	utils.on_config_ready = function(){
-		if(utils.config.bundles!==undefined){
-			if(utils.config.bundles.endsWith('.json')){
+		if(utils.config.get().bundles!==undefined){
+			if(utils.config.get().bundles.endsWith('.json')){
 				$.ajax({
-					  url: utils.config.bundles,
+					  url: utils.config.get().bundles,
 					  dataType: 'json',
 					  async: false,
 					  cache : true,
@@ -450,7 +453,7 @@ window.utils = function(utils){
 							utils.updateBundle(resp.bundles);
 					  }
 				});
-			} else utils.files.loadJSFile(utils.config.bundles)
+			} else utils.files.loadJSFile(utils.config.get().bundles)
 		}
 		utils.scan_scripts();
 	};
@@ -458,24 +461,25 @@ window.utils = function(utils){
 }(window.utils || {});
 
 utils.define('utils.config', function(config) {
-	config.combine = true;
+	var CONFIG = {};
+	CONFIG.combine = true;
 	var trimSlashes = function(str){
 		return str.replace(/(^\/)|(\/$)/g, "");
 	};
-	config.ajaxPrefilter = function(options, originalOptions, jqXHR) {
+	CONFIG.ajaxPrefilter = function(options, originalOptions, jqXHR) {
 		if (options.dataType == 'script' || originalOptions.dataType == 'script') {
 			options.cache = true;
 		}
 	};
 	config.set = function(options){
-		this.moduleConfig = options.moduleConfig || {};
+		CONFIG.moduleConfig = options.moduleConfig || {};
 		console.info("setting configuration...");
 		CONTEXT_PATH = options.contextPath ? ("/"+trimSlashes(options.contextPath) + "/") : CONTEXT_PATH;
-		config.RESOURCE_PATH =  (options.contextPath && options.resourcePath)
+		CONFIG.RESOURCE_PATH =  (options.contextPath && options.resourcePath)
 							? ('/' + trimSlashes(options.contextPath) 
 									+ '/' +trimSlashes(options.resourcePath) + '/') 
-							: config.RESOURCE_PATH;
-		config.combine = (options.combine!=undefined) ? options.combine : config.combine;
+							: options.RESOURCE_PATH;
+		CONFIG.combine = (options.combine!=undefined) ? options.combine : CONFIG.combine;
 		if(options.moduleDir){
 			for(var reg in options.moduleDir){
 				utils.files.DIR_MATCH[reg] = {
@@ -484,25 +488,26 @@ utils.define('utils.config', function(config) {
 				}
 			}
 		}
-		config.resolve_bundles = (options.resolve_bundles===undefined) || options.resolve_bundles;
+		CONFIG.resolve_bundles = (options.resolve_bundles===undefined) || options.resolve_bundles;
 		options.contextPath = CONTEXT_PATH;
 		delete options.moduleDir;
 		for(var i in options){
-			config[i]= options[i];
+			CONFIG[i]= options[i];
 		}
-		config.bundles = options.bundle_list || options.bundles;
-		$.ajaxPrefilter(config.ajaxPrefilter);
+		CONFIG.bundles = options.bundle_list || options.bundles;
+		$.ajaxPrefilter(CONFIG.ajaxPrefilter);
 		utils.on_config_ready();
 	};
 	config.get = function(moduleName){
-		return this[moduleName] || {};
+		if(moduleName === undefined) return CONFIG;
+		return CONFIG[moduleName] || {};
 	};
 	config.getModuleConfig = function(moduleName){
-		return this.moduleConfig[moduleName] || {};
+		return CONFIG.moduleConfig[moduleName] || {};
 	};
 });
 utils.define('utils.files', function(files) {
-	var config = utils.config;
+	var CONFIG = utils.config.get();
 	files.MODULES = {};
 	files.LOADED = {};
 	files.LOADING = {};
@@ -542,13 +547,13 @@ utils.define('utils.files', function(files) {
     		path = path+'.js';
     		isJS = true;
     	}
-    	var info = utils.url.info(path,utils.config.contextPath,utils.config.resourcePath);
+    	var info = utils.url.info(path,CONFIG.contextPath,CONFIG.resourcePath);
     	var module = info.file.replace(/([\w]+)\.js$|.css$/, "$1");
     	var ext = isJS ? "js" : "css"
     	if(info.isFile){
     		info = utils.url.info(
     				files.dirMatch(module) + "." + ext,
-    				utils.config.contextPath,utils.config.resourcePath);
+    				CONFIG.contextPath,CONFIG.resourcePath);
     	}
     	info.isJS = isJS; info.isCSS = isCSS; info.ext = ext;
     	info.module = module;
@@ -606,8 +611,8 @@ utils.define('utils.files', function(files) {
 		var params = module_files.join(',');
 		var encoded = files.encrypt_list(module_files);
 		var url = (
-				(config.mergeJS && (typeof config.mergeJS === 'function' ? config.mergeJS(params,encoded) : config.mergeJS))|| 
-				(utils.config.RESOURCE_PATH + 'combine.js')
+				(CONFIG.mergeJS && (typeof CONFIG.mergeJS === 'function' ? CONFIG.mergeJS(params,encoded) : CONFIG.mergeJS))|| 
+				(CONFIG.RESOURCE_PATH + 'combine.js')
 			)+'?@='+params;
 		return {
 			module_files : module_files,
@@ -621,7 +626,7 @@ utils.define('utils.files', function(files) {
     	if(!files.script_rendered){
     		utils.scan_scripts();
     	}
-    	if(config.combineJS && list.length){
+    	if(CONFIG.combineJS && list.length){
         	list = list.filter(function(module_file){
         		return !files.LOADED[module_file];
         	});
@@ -643,10 +648,10 @@ utils.define('utils.files', function(files) {
     	} 
     };
     files.loadCss = function(list,cb){
-    	if(config.combineCSS && list.length){
+    	if(CONFIG.combineCSS && list.length){
     		$.ajax({
     			async: true,
-    			url: utils.config.RESOURCE_PATH + 'combine.css?@='+list.join(','),
+    			url: CONFIG.RESOURCE_PATH + 'combine.css?@='+list.join(','),
     			complete : function(){
     				for(var i in list){
     					files.LOADED[list[i]] = list[i];

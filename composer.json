@@ -6,25 +6,23 @@
     "license": "MIT",
     
     "require": {
-       "jqgeeks/jquery": ">=1.3.0"
+       "webmodules/jquery": ">=1.3.0",
+       "jqgeeks/foo": ">=1.0.0"
     },
     
-    "spam" : {
-    	"modules" : {
-    		"utils" : "utils.js",
-    		"utils.json" : "utils.json.js"
+    "_loader_" : {
+    	"_all_" : {
+    		"files" : [ "utils.js", "utils.json.js"]
     	},
-    	"bundles" : {
-    		"polyfills" : {
-	    		"files" : [	"polyfills.js"	]
-	    	},
-	    	"utils_config" : {
-	    		"files" : [   ],
-	    		"@" : []
-	    	},
-	    	"utils_only" : {
-	    		
-	    	}
+		"polyfills" : {
+    		"files" : [	"polyfills.js"	]
+    	},
+    	"utils_config" : {
+    		"files" : [   ],
+    		"@" : []
+    	},
+    	"utils_only" : {
+    		
     	}
     }
 }
