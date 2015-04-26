@@ -568,11 +568,14 @@ utils.define('utils.files', function(files) {
     files.setResourcePath = function(path){
     	this.rpath = path;
     };
+    files.getVersion = function(){
+    	return (new Date()).getTime();
+    };
     files.loadJSFile = function(js){
-    	$('head').append('<script loaded=true src="' + js + '" type="text/javascript"></script>');
+    	$('head').append('<script loaded=true src="' + js + '?_=' + files.getVersion()  +'" type="text/javascript"></script>');
     };
     files.loadCSSFile = function(css){
-    	$('head').append('<link loaded=true href="' + css + '" type="text/css" rel=stylesheet></link>');
+    	$('head').append('<link loaded=true href="' + css + '?_=' + files.getVersion()  +'" type="text/css" rel=stylesheet></link>');
     };
     files.addStyle = function(css){
     	$('head').append('<style type="text/css" rel=stylesheet>'+css+'</style>');
