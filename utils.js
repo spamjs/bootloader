@@ -708,9 +708,12 @@ utils.define('utils.url', function(url) {
     	info.dir = x.join('/');
     	return info;
 	};
+	url.isRemote = function(path){
+		return path.indexOf('http://')==0 || path.indexOf('https://')==0;
+	};
 	url.resolve = function(path,context,pwd){
 		var context = context || ""; var pwd = pwd || "";
-		if(path.indexOf('http://')==0 || path.indexOf('https://')==0)
+		if(url.isRemote(path))
 			return  path;
 		else if(path.indexOf('/')==0){
     		return url.clean(path);

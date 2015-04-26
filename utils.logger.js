@@ -65,7 +65,7 @@ utils.define('utils.logger',function(logger){
 		var deBugMesgEvent = logger.debugTimer(timer,isNew);
 		deBugMesgEvent.caller(arguments.callee.caller);
 		if(isNew)
-			return logger.info(deBugMesg,arg1,arg2,arg3);
+			return logger.info(deBugMesgEvent,arg1,arg2,arg3);
 		if(message && message.name =='Error'){
 			deBugMesgEvent.error(message);
 			return logger.info(deBugMesgEvent,arg1,arg2,arg3);
@@ -77,7 +77,7 @@ utils.define('utils.logger',function(logger){
      *  log for info purpose
      */
 	logger.info = function () {
-        if (utils.config.debug && console && console.info) {
+        if (this.debug && console && console.info) {
             console.info.apply(this,arguments)
         }
     };
@@ -86,7 +86,7 @@ utils.define('utils.logger',function(logger){
      *  log for debugging
      */
 	logger.debug = function () {
-        if (utils.config.debug && console && console.debug) {
+        if (this.debug && console && console.debug) {
             console.debug.apply(this,arguments)
         }
     };
@@ -95,7 +95,7 @@ utils.define('utils.logger',function(logger){
      *  log for logging
      */
 	logger.log = function () {
-        if (utils.config.debug && console && console.log) {
+        if (this.debug && console && console.log) {
             console.log.apply(this,arguments)
         }
     };
@@ -105,12 +105,17 @@ utils.define('utils.logger',function(logger){
      *  can be suppressed by `silent` option.
      */
     logger.warn = function () {
-        if (!utils.config.silent && console) {
+        if (!this.silent && console) {
             console.warn.apply(this,arguments)
-            if (utils.config.debug && console.trace) {
+            if (this.debug && console.trace) {
                 console.trace()
             }
         }
     };
+    
+    logger._config_ =  function(config){
+    	this.debug = utils.confg.get('debug');
+    	this.silent = utils.confg.get('silent');
+    }
     
 });
