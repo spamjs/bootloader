@@ -30,26 +30,4 @@ utils.define('utils.browser', function(custom) {
             return $(selector,$c).first();
         }
     }
-	
-	window.utils.preventPropagation = function(event) {
-		if (!event)
-			var event = window.event;
-		if (event) {
-			if (event.preventDefault) {
-				event.preventDefault();
-				event.cancelBubble = true;
-				event.returnValue = false;
-				event.stopPropagation && event.stopPropagation();
-				event.stopImmediatePropagation
-						&& event.stopImmediatePropagation();
-			} else {
-				event.cancelBubble = true;
-				event.returnValue = false;
-				event.stopPropagation && event.stopPropagation();
-				event.stopImmediatePropagation
-						&& event.stopImmediatePropagation();
-				return false;
-			}
-		}
-	};
 });
