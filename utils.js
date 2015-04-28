@@ -613,6 +613,7 @@ utils.define('utils.files', function(files) {
     	return $.get(resource.url);
     };
     files.encrypt_list = function(module_files){
+    	return md5(module_files);
     	return "merged"+module_files[0].replace("\/","_",'g'); //utils.string.encode64(params);
     };
     files.prepare_js_request = function(module_files){
