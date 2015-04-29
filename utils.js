@@ -569,7 +569,7 @@ utils.define('utils.files', function(files) {
     	this.rpath = path;
     };
     files.getVersion = function(){
-    	return (new Date()).getTime();
+    	return CONFIG.version || RELOAD_VERSION (new Date()).getTime();
     };
     files.loadJSFile = function(js){
     	$('head').append('<script loaded=true src="' + js + '?_=' + files.getVersion()  +'" type="text/javascript"></script>');
@@ -604,7 +604,7 @@ utils.define('utils.files', function(files) {
     files._jsload_ = function(resource){
     	return $.ajax({
 			async: resource.async || false,
-			url: resource.url,
+			url: resource.url + "&_=" + files.getVersion(),
 			dataType: resource.dataType || "script",
 			cache : resource.cache || true
 		});
