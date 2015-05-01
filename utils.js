@@ -569,7 +569,7 @@ utils.define('utils.files', function(files) {
     	this.rpath = path;
     };
     files.getVersion = function(){
-    	return CONFIG.version || RELOAD_VERSION (new Date()).getTime();
+    	return CONFIG.version || (new Date()).getTime();
     };
     files.loadJSFile = function(js){
     	$('head').append('<script loaded=true src="' + js + '?_=' + files.getVersion()  +'" type="text/javascript"></script>');
