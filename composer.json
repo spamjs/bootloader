@@ -1,28 +1,28 @@
 {
-    "name": "jqgeeks/utils",
-    "type": "library",
-    "description": "JQuery Utilitties compatible with rudrax framework",
-    "keywords": ["rudra", "API"],
-    "license": "MIT",
-    
-    "require": {
-       "webmodules/jquery": ">=1.3.0",
-       "webmodules/foo": ">=1.0.0"
-    },
-    
-    "_loader_" : {
-    	"_all_" : {
-    		"files" : [ "utils.js", "utils.json.js"]
-    	},
+	"name" : "jqgeeks/utils",
+	"type" : "library",
+	"description" : "JQuery Utilitties compatible with rudrax framework",
+	"keywords" : [
+		"rudra",
+		"API"
+	],
+	"license" : "MIT",
+	"require" : {
+		"webmodules/jquery" : ">=1.3.0",
+		"webmodules/foo" : ">=0.0.4"
+	},
+	"_loader_" : {
+		"_all_" : {
+			"files" : [
+				"utils.js",
+				"utils.json.js"
+			]
+		},
 		"polyfills" : {
-    		"files" : [	"polyfills.js"	]
-    	},
-    	"utils_config" : {
-    		"files" : [   ],
-    		"@" : []
-    	},
-    	"utils_only" : {
-    		
-    	}
-    }
+			"files" : [
+				"polyfills.js"
+			]
+		},
+		"utils_config" : {}
+	}
 }
