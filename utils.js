@@ -676,9 +676,10 @@ utils.define('utils.files', function(files) {
     		for(var i in list){
     			if(!files.LOADING[list[i]]){
         			files.LOADING[list[i]] = list[i];
-        			files._cssload_({ url : list[i]}).done(function(resp){
-        				files.addStyle(resp);
-        			});
+        			files.loadCSSFile(list[i]);
+//        			files._cssload_({ url : list[i]}).done(function(resp){
+//        				files.addStyle(resp);
+//        			});
         			//files.loadCSSFile(list[i]);    			
         			files.LOADED[list[i]] = list[i];
     			}
