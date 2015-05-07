@@ -431,7 +431,11 @@ window.utils = function(utils){
 						var cleanSRC = p.url.replace(document.location.origin,'');
 						utils.files.LOADED[cleanSRC] = cleanSRC
 						MODULE_MAP[p.module] = MODULE_MAP[p.module] || (!MODULE_PENDING[p.module] ? {} : null);
-						MODULE_MAP[p.module]._dir_ = p.dir;						
+						if(MODULE_MAP[p.module]){
+							MODULE_MAP[p.module]._dir_ = p.dir;
+						} else {
+							console.error("MODULE_INDEX_EXCEPTION: ",p.module)
+						}
 					});
 				}
 			}
