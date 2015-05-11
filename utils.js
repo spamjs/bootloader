@@ -643,6 +643,7 @@ utils.define('utils.files', function(files) {
         	list = list.filter(function(module_file){
         		return !files.LOADED[module_file];
         	});
+        	if(list.length==0) return;
     		files._jsload_(files.prepare_js_request(list)).always(function(resp){
 				for(var i in list){
 					files.LOADED[list[i]] = list[i];
