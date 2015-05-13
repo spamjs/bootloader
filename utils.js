@@ -42,14 +42,14 @@ window.utils = function(utils){
 				utils.loadModule(fromString);
 			}
 		}
-		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._define_){
+		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._definition_){
 			if(Object.setPrototypeOf){
 				Object.setPrototypeOf(defObj, MODULE_MAP[fromString]);
 			} else {
 				if(MODULE_MAP[fromString]._parent_){
 					extendClass(defObj,MODULE_MAP[fromString]._parent_,dummyProto);
 				}
-				MODULE_MAP[fromString]._define_(defObj,dummyProto);
+				MODULE_MAP[fromString]._definition_(defObj,dummyProto);
 			}
 			defObj._hasExtened_[fromString] = true;
 		} else {
@@ -132,12 +132,12 @@ window.utils = function(utils){
 		this.module = moduleName;
 		this._hasExtened_ = {};
 	};
-	ModuleClass.prototype.as = function(_define_){
-		if(!this.hasOwnProperty('_define_') ){
+	ModuleClass.prototype.as = function(_definition_){
+		if(!this.hasOwnProperty('_definition_') ){
 			var self = this;
-			this._define_ = _define_;
+			this._definition_ = _definition_;
 			if(utils.config && utils.config.get && utils.config.get().load_all_modules){
-				var matches = _define_.toString().match(/utils\.module\(([^)]+)*\)/g);
+				var matches = _definition_.toString().match(/utils\.module\(([^)]+)*\)/g);
 				if(matches){
 					var reqModules = matches.map(function(mod){
 						return mod.replace(/utils\.module\(|\"|\'|\)/g,"");
@@ -152,7 +152,7 @@ window.utils = function(utils){
 				if(this.parent()!==undefined && this.parent()._extend_){
 					this.parent()._extend_(this,_protos_);
 				} else {
-					this._define_(this,_protos_);
+					this._definition_(this,_protos_);
 				}
 			} catch (e){
 				console.warn(this.module,e);
@@ -175,6 +175,7 @@ window.utils = function(utils){
 			if(this._config_ && utils.config){
 				this._config_(utils.config.getModuleConfig(this.module),utils.config.get())
 			}
+			if(this._define_) this._define_();
 			if(this._ready_){
 				utils.ready(function(){
 					try{
@@ -276,7 +277,7 @@ window.utils = function(utils){
 				 * If classPath is given and is actually a package name then
 				 * module is created in global namespace and returned to caller.
 				 */
-				if(!MODULE_MAP[classPath] || !MODULE_MAP[classPath]._define_) {
+				if(!MODULE_MAP[classPath] || !MODULE_MAP[classPath]._definition_) {
 					/*
 					var nspace = classPath.split('.');
 					var win = window;
