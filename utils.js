@@ -6,6 +6,7 @@ window.utils = function(root){
 	}
 	utils.__INTIALIZED__ = true;
 	console.info("__INTIALIZING__");
+	var $ = jQuery;
 
 	var MODULE_CB = [];
 	var MODULE_MAP = {},PROXY_MAP = {};
