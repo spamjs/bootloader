@@ -1,4 +1,6 @@
-window.utils = function(utils){
+window.utils = function(root){
+	var utils = root.utils || {};
+
 	if(utils.__INTIALIZED__){
 		return utils //throw "ALREADY INTIALIZED";
 	}
@@ -152,7 +154,7 @@ window.utils = function(utils){
 				if(this.parent()!==undefined && this.parent()._extend_){
 					this.parent()._extend_(this,_protos_);
 				} else {
-					this._definition_(this,_protos_);
+					this._definition_.call(root,this,_protos_);
 				}
 			} catch (e){
 				console.warn(this.module,e);
@@ -465,7 +467,7 @@ window.utils = function(utils){
 		utils.scan_scripts();
 	};
 	return utils;
-}(window.utils || {});
+}(this);
 
 utils.define('utils.config', function(config) {
 	var CONFIG = {};
