@@ -513,6 +513,7 @@ utils.define('utils.config', function(config) {
 		return CONFIG[moduleName] || {};
 	};
 	config.getModuleConfig = function(moduleName){
+		console.info("moduleName",moduleName)
 		return CONFIG.moduleConfig[moduleName] || {};
 	};
 });
@@ -612,9 +613,12 @@ utils.define('utils.files', function(files) {
     files._jsload_ = function(resource){
     	return $.ajax({
 			async: resource.async || false,
-			url: resource.url + "&_=" + files.getVersion(),
+			url: resource.url,
 			dataType: resource.dataType || "script",
-			cache : resource.cache || true
+			cache : resource.cache || true,
+			data : {
+				_ : files.getVersion()
+			}
 		});
     };
     files._cssload_ = function(resource){
