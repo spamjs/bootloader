@@ -760,3 +760,14 @@ utils.define('utils.url', function(url) {
 		return (domain +  '/'  + parents.join( '/')).replace(/(\/)+/g,'/');
 	};
 });
+
+(function(foo){
+	foo._require_ = function(){
+		return utils.require.apply(utils,arguments);
+	};
+	var _module_ = foo._module_;
+	foo._module_ = function(){
+		return utils.module.apply(utils,arguments) || _module_.apply(foo,arguments);
+	};
+})(this)
+
