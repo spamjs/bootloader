@@ -9,7 +9,7 @@
 	"license" : "MIT",
 	"require" : {
 		"webmodules/jquery" : ">=1.3.0",
-		"webmodules/foo" : ">=0.0.4"
+		"webmodules/foo" : ">=0.0.8"
 	},
 	"_loader_" : {
 		"_all_" : {
