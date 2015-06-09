@@ -418,7 +418,6 @@ window.utils = function(root){
 		_READY_.promise().done(cb)
 	};
 	utils.scan_scripts = function(){
-		console.info("scannnig script tags...");
 		var scripts = document.getElementsByTagName('script');
 		for(var i=0; i<scripts.length;i++){
 			if(!scripts[i].loaded){
@@ -448,7 +447,6 @@ window.utils = function(root){
 	utils.ready(utils.scan_scripts);
 	
 	$(document).ready(function(){
-		console.info("document..ready...");
 		_READY_.resolve();
 	});
 	utils.on_config_ready = function(){
@@ -513,7 +511,6 @@ utils.define('utils.config', function(config) {
 		return CONFIG[moduleName] || {};
 	};
 	config.getModuleConfig = function(moduleName){
-		console.info("moduleName",moduleName)
 		return CONFIG.moduleConfig[moduleName] || {};
 	};
 });
