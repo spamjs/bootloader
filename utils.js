@@ -766,5 +766,14 @@ utils.define('utils.url', function(url) {
 	foo._module_ = function(){
 		return utils.module.apply(utils,arguments) || _module_.apply(foo,arguments);
 	};
+	foo._define_ = function(moduleName, fromModuleName,definition){
+		if(arguments.length ===3){
+			return utils.define(moduleName).extend(fromModuleName).as(definition);
+		} else if(arguments.length === 2){
+			return utils.define(moduleName).as(fromModuleName);
+		} else {
+			return utils.define(moduleName,fromModuleName);
+		}
+	};
 })(this)
 
