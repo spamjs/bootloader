@@ -402,6 +402,7 @@ window.utils = function(root){
 					console.warn(mod_list[i],'is not registered module');
 				} else {
 					MODULE_MAP[mod_list[i].module]._dir_ = mod_list[i].dir;
+					mod_list[i].IS_REGISTERED_MODULE = true;
 				}
 			}
 		});
@@ -764,7 +765,12 @@ utils.define('utils.url', function(url) {
 	};
 	var _module_ = foo._module_;
 	foo._module_ = function(){
-		return utils.module.apply(utils,arguments) || _module_.apply(foo,arguments);
+		var module = utils.module.apply(utils,arguments);
+		if(module === undefined || module.IS_REGISTERED_MODULE !== true){
+			return _module_.apply(foo,arguments);
+		} else {
+			return module;
+		}
 	};
 	foo._define_ = function(moduleName, fromModuleName,definition){
 		if(arguments.length ===3){
