@@ -133,6 +133,7 @@ window.utils = function(root){
 	
 	var ModuleClass = function ModuleClass (moduleName){
 		this.module = moduleName;
+		this.IS_REGISTERED_MODULE = true;
 		this._hasExtened_ = {};
 	};
 	ModuleClass.prototype.as = function(_definition_){
