@@ -696,6 +696,11 @@ utils.define('utils.files', function(files) {
     files.get = function(){
     	return $.get.apply(this,arguments);
     };
+    files.getJSON = function(){
+    	return  files.get.apply(this,arguments).then(function(resp){
+    		return utils.json.parse(resp);
+    	});
+    };
 	utils.ready(function(){
 		files.script_rendered = true
 	});
