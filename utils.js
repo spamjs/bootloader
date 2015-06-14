@@ -772,7 +772,7 @@ utils.define('utils.url', function(url) {
 	var _module_ = foo._module_;
 	foo._module_ = function(){
 		var module = utils.module.apply(utils,arguments);
-		if(module === undefined || module.IS_REGISTERED_MODULE !== true){
+		if(!module || module.IS_REGISTERED_MODULE !== true){
 			return _module_.apply(foo,arguments);
 		} else {
 			return module;
