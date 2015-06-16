@@ -347,10 +347,10 @@ window.utils = function(root){
 		utils.require.apply(this,files);
 	};
 	
-	utils._module =  utils.module = function(classPath){
+	utils._module =  utils.module = function(classPath, tryRequire){
 		if(!MODULE_MAP[classPath]){
 			var info = utils.files.getInfo(classPath);
-			if(!MODULE_MAP[info.module]){
+			if(!MODULE_MAP[info.module] && tryRequire !== false){
 				utils.require(classPath);				
 			}
 			return MODULE_MAP[info.module];
@@ -771,7 +771,7 @@ utils.define('utils.url', function(url) {
 	};
 	var _module_ = foo._module_;
 	foo._module_ = function(){
-		var module = utils.module.apply(utils,arguments);
+		var module = utils.module(arguments[0],false);
 		if(!module || module.IS_REGISTERED_MODULE !== true){
 			return _module_.apply(foo,arguments);
 		} else {
@@ -787,5 +787,5 @@ utils.define('utils.url', function(url) {
 			return utils.define(moduleName,fromModuleName);
 		}
 	};
-})(this)
+})(this);
 
