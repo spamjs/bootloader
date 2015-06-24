@@ -1,10 +1,10 @@
-window.utils = function(root){
-	var utils = root.utils || {};
-
-	if(utils.__INTIALIZED__){
-		return utils //throw "ALREADY INTIALIZED";
+_define_("bootloader",function(bootloader){
+	var root = window;
+	
+	if(bootloader.__INTIALIZED__){
+		return bootloader //throw "ALREADY INTIALIZED";
 	}
-	utils.__INTIALIZED__ = true;
+	bootloader.__INTIALIZED__ = true;
 	console.info("__INTIALIZING__");
 	var $ = jQuery;
 
@@ -13,7 +13,12 @@ window.utils = function(root){
 	var MODULE_PENDING = {};
 	var CONTEXT_PATH = "/";
 	
-	utils.getAll = function(){
+	var _READY_ = $.Deferred();
+	bootloader.ready = function(cb){
+		return _READY_.promise().done(cb)
+	};
+	
+	bootloader.getAll = function(){
 		return [MODULE_CB,MODULE_MAP,MODULE_PENDING]
 	};
 	
@@ -42,7 +47,7 @@ window.utils = function(root){
 				return defObj;
 			} else{
 				defObj.waiting = false;
-				utils.loadModule(fromString);
+				bootloader.loadModule(fromString);
 			}
 		}
 		if(MODULE_MAP[fromString] && MODULE_MAP[fromString]._definition_){
@@ -62,7 +67,7 @@ window.utils = function(root){
 		return defObj;
 	};
 	
-	var AbstractModule = utils.AbstractModule = function AbstractModule(){
+	var AbstractModule = bootloader.AbstractModule = function AbstractModule(){
 		
 	};
 	AbstractModule.prototype.parent = function(fun){
@@ -88,23 +93,11 @@ window.utils = function(root){
 		return this; 
 	};
 	
-	var selectNameSpace = function(nameSpace,valObj){
-		var nspace = nameSpace.split('.');
-		var win = window;
-		var retspace = nspace[0];
-		for(var i =0; i<nspace.length-1; i++){
-			if (!win[nspace[i]]) win[nspace[i]] = {};
-			retspace = nspace[i];
-			win = win[retspace];
-		}
-		return win[nspace[nspace.length-1]] = valObj;
-	}
-	
 	//CLASS PATH HAS BEEN MOVED TO NEW MODUEL
 	var ClassPath = function ClassPath(_dir_,_file_,data){
 		this._dir_ = _dir_;
 		this._file_ = _file_ || "";
-		this._file_path_ = utils.url.resolve(this._file_,this._dir_);
+		this._file_path_ = bootloader.url.resolve(this._file_,this._dir_);
 		this._resolved_path_ = this._dir_;
 		this._data_ = data;
 	};
@@ -113,7 +106,7 @@ window.utils = function(root){
 		 return this;
 	};
 	ClassPath.prototype.load = function(data){
-		return utils.files.get(this._file_path_,data || this._data_);
+		return bootloader.files.get(this._file_path_,data || this._data_);
 	};
 	ClassPath.prototype.toString = function(){
 		return this._file_path_;
@@ -127,7 +120,7 @@ window.utils = function(root){
 	};
 	ClassPath.prototype._type_ = ClassPath.name;
 	
-	utils.getClassPath = function (_dir_,_file_,data){
+	bootloader.getClassPath = function (_dir_,_file_,data){
 		return new ClassPath(_dir_,_file_,data);
 	}
 	
@@ -140,18 +133,18 @@ window.utils = function(root){
 		if(!this.hasOwnProperty('_definition_') ){
 			var self = this;
 			this._definition_ = _definition_;
-			if(utils.config && utils.config.get && utils.config.get().load_all_modules){
-				var matches = _definition_.toString().match(/utils\.module\(([^)]+)*\)/g);
+			if(bootloader.config && bootloader.config.get && bootloader.config.get().load_all_modules){
+				var matches = _definition_.toString().match(/bootloader\.module\(([^)]+)*\)/g);
 				if(matches){
 					var reqModules = matches.map(function(mod){
-						return mod.replace(/utils\.module\(|\"|\'|\)/g,"");
+						return mod.replace(/bootloader\.module\(|\"|\'|\)/g,"");
 					});
-					utils.require.apply(utils,reqModules);
+					bootloader.require.apply(bootloader,reqModules);
 				}
 			}
 			//Prepraring Prototype
 			var _protos_ = getPrototype(this._parent_);
-			//console.info(utils.status.start(),"ASTART",this.module,this._parent_,_protos_)
+			//console.info(bootloader.status.start(),"ASTART",this.module,this._parent_,_protos_)
 			try	{
 				if(this.parent()!==undefined && this.parent()._extend_){
 					this.parent()._extend_(this,_protos_);
@@ -176,12 +169,12 @@ window.utils = function(root){
 			if(this.parent()!==undefined && this.parent()._extended_){
 				this.parent()._extended_(this,this.proto_object);
 			}
-			if(this._config_ && utils.config){
-				this._config_(utils.config.getModuleConfig(this.module),utils.config.get())
+			if(this._config_ && bootloader.config){
+				this._config_(bootloader.config.getModuleConfig(this.module),bootloader.config.get())
 			}
 			if(this._define_) this._define_();
 			if(this._ready_){
-				utils.ready(function(){
+				bootloader.ready(function(){
 					try{
 						if(self._ready_) self._ready_();
 					} catch (e){
@@ -189,7 +182,7 @@ window.utils = function(root){
 					}
 				});
 			}
-			//console.info(utils.status.done(),"ASDONE",this.module,this._parent_)
+			//console.info(bootloader.status.done(),"ASDONE",this.module,this._parent_)
 		} else {
 			throw new Error("Module Definition " + this.module + ' already Exists ' 
 					+ 'module can have only one definition')
@@ -228,45 +221,45 @@ window.utils = function(root){
 		return new ClassPath(this._dir_,_file_,data);
 	};
 	ModuleClass.prototype.getContextPath = function(_file_,data){
-		return new ClassPath(utils.config.get().contextPath,_file_,data);
+		return new ClassPath(bootloader.config.get().contextPath,_file_,data);
 	};
 	ModuleClass.prototype.mixin = mixin;
 	
-	utils.getContextPath = ModuleClass.prototype.getContextPath;
-	utils.extend = function(fromString){
-		return utils.define().extend(fromString);
+	bootloader.getContextPath = ModuleClass.prototype.getContextPath;
+	bootloader.extend = function(fromString){
+		return bootloader.define().extend(fromString);
 	};
-	utils.intercept = function(classPath){
-		return utils.proxy().intercept(classPath);
+	bootloader.intercept = function(classPath){
+		return bootloader.proxy().intercept(classPath);
 	};
 	
 	var ProxyClass = function ProxyClass(moduleName){
 		this.module = moduleName;
 	};
 	ProxyClass.prototype.intercept = function(toClass){
-		utils.loadModule(toClass);
+		bootloader.loadModule(toClass);
 		this._intercept_ = toClass;
 		MODULE_MAP[this.module] = MODULE_MAP[this._intercept_]
 		return this;
 	};
 	ProxyClass.prototype.as = function(cb){
 		cb(MODULE_MAP[this._intercept_],MODULE_MAP[this._intercept_].proto_object,this);
-		if(this._config_ && utils.config){
-			this._config_(utils.config.getModuleConfig(this.module),utils.config.get())
+		if(this._config_ && bootloader.config){
+			this._config_(bootloader.config.getModuleConfig(this.module),bootloader.config.get())
 		}
 		return  this;
 	};
 
 	 /**
 	  * function define(moduleName,moduleDef) 
-	  * @memberOf   utils
+	  * @memberOf   bootloader
 	  * @param   {String} moduleName
 	  * @param   {Function} moduleDef
 	  * @returns {ModuleClass}
 	  * @see     Object
 	  * @since   Standard ECMA-262 3rd. Edition 
 	 */ 
-	utils.define = function(classPath,asFun){
+	bootloader.define = function(classPath,asFun){
 		try{
 			if(!classPath){
 				/**
@@ -282,18 +275,7 @@ window.utils = function(root){
 				 * module is created in global namespace and returned to caller.
 				 */
 				if(!MODULE_MAP[classPath] || !MODULE_MAP[classPath]._definition_) {
-					/*
-					var nspace = classPath.split('.');
-					var win = window;
-					var retspace = nspace[0];
-					for(var i =0; i<nspace.length-1; i++){
-						if (!win[nspace[i]]) win[nspace[i]] = {};
-						retspace = nspace[i];
-						win = win[retspace];
-					}
-					MODULE_MAP[classPath] = win[nspace[nspace.length-1]] = new ModuleClass(classPath);
-					*/
-					MODULE_MAP[classPath] = selectNameSpace(classPath,new ModuleClass(classPath));
+					MODULE_MAP[classPath] = _namespace_(classPath,new ModuleClass(classPath));
 				} //else throw new Error("Cannot redefine "+classPath + " as it already exists");
 				if(MODULE_MAP[classPath] && asFun && typeof asFun == 'function'){
 					MODULE_MAP[classPath].as(asFun);
@@ -307,11 +289,11 @@ window.utils = function(root){
 		}
 	};
 	
-	utils.proxy = function(classPath){
+	bootloader.proxy = function(classPath){
 		if(!classPath){
 			return new ProxyClass('anonymous');
 		} else {
-			return PROXY_MAP[classPath] = selectNameSpace(classPath,new ProxyClass(classPath));
+			return PROXY_MAP[classPath] = _namespace_(classPath,new ProxyClass(classPath));
 		}
 	};
 	
@@ -324,41 +306,41 @@ window.utils = function(root){
 			return to.concat(from[pack]['files']);
 		else return to;
 	};
-	utils.resolvePack = utils.updateBundle = function(packs){
-		return utils.files.update(packs);
+	bootloader.resolvePack = bootloader.updateBundle = function(packs){
+		return bootloader.files.update(packs);
 	};
-	utils.loadBundle = utils.loadPackage = function(pack){
+	bootloader.loadBundle = bootloader.loadPackage = function(pack){
 		var pack_list = [];
 		for(var i = 0; i < arguments.length; i++){
-			if(!utils.files.BUNDLES[arguments[i]]){
+			if(!bootloader.files.BUNDLES[arguments[i]]){
 				pack_list.push(arguments[i]);	
 			}
 		}
-		if(pack_list.length && utils.config.get().resolve_bundles){
-			utils.files.loadJSFile('resources.json?cb=utils.updateBundle&$='
+		if(pack_list.length && bootloader.config.get().resolve_bundles){
+			bootloader.files.loadJSFile('resources.json?cb=bootloader.updateBundle&$='
 					+pack_list.join(','));
 		}
 		var files = [];
 		for(var i = 0; i < arguments.length; i++){
-			if(utils.files.BUNDLES[arguments[i]]){
-				files = createPackList(arguments[i],utils.files.BUNDLES,files);	
+			if(bootloader.files.BUNDLES[arguments[i]]){
+				files = createPackList(arguments[i],bootloader.files.BUNDLES,files);	
 			}
 		}
-		utils.require.apply(this,files);
+		bootloader.require.apply(this,files);
 	};
 	
-	utils._module =  utils.module = function(classPath, tryRequire){
+	bootloader._module =  bootloader.module = function(classPath, tryRequire){
 		if(!MODULE_MAP[classPath]){
-			var info = utils.files.getInfo(classPath);
+			var info = bootloader.files.getInfo(classPath);
 			if(!MODULE_MAP[info.module] && tryRequire !== false){
-				utils.require(classPath);				
+				bootloader.require(classPath);				
 			}
 			return MODULE_MAP[info.module];
 		}
 		return MODULE_MAP[classPath];
 	};
 	
-	utils.require = utils.loadModule = function(){
+	bootloader.require = bootloader.loadModule = function(){
 		var _mods_ = [], _bundles_ = [];
 		for (var j = 0; j < arguments.length; j++){
 			if(arguments[j]){
@@ -371,14 +353,14 @@ window.utils = function(root){
 			}
 		}
 		if(_bundles_.length>0){
-			var files = utils.loadBundle.apply(this,_bundles_);
+			var files = bootloader.loadBundle.apply(this,_bundles_);
 		}
 		var js_list = []; //Files to be fetched
 		var mod_list = []; //Modules to be downloaded
 		for (var j = 0; j < _mods_.length; j++) {
 			var module = _mods_[j];
 			if(module && !MODULE_MAP[module]){
-				var p = utils.files.getInfo(module);
+				var p = bootloader.files.getInfo(module);
 				MODULE_PENDING[p.module] = p.module;
 				_mods_[j] = p.module;
 				mod_list.push(p);
@@ -386,7 +368,7 @@ window.utils = function(root){
 			}
 		}
 		var RETMODULE = [],_args = _mods_;
-		utils.files.loadFiles.call(utils.files,js_list,function(){
+		bootloader.files.loadFiles.call(bootloader.files,js_list,function(){
 			for(var i in mod_list){
 				delete MODULE_PENDING[mod_list[i].module];
 			}
@@ -410,16 +392,12 @@ window.utils = function(root){
 		return RETMODULE;
 	};
 
-	utils.status = {
+	bootloader.status = {
 			me  : "=",
 			start : function(){ var x =this.me; this.me+="="; return x;},
 			done : function(){ this.me = this.me.replace('=','');return this.me;}
 	}
-	var _READY_ = $.Deferred();
-	utils.ready = function(cb){
-		_READY_.promise().done(cb)
-	};
-	utils.scan_scripts = function(){
+	bootloader.scan_scripts = function(){
 		var scripts = document.getElementsByTagName('script');
 		for(var i=0; i<scripts.length;i++){
 			if(!scripts[i].loaded){
@@ -432,9 +410,9 @@ window.utils = function(root){
 						srcs = [scripts[i].src];
 					}
 					srcs.map(function(src){
-						var p = utils.files.getInfo((src).replace(document.location.origin,''));
+						var p = bootloader.files.getInfo((src).replace(document.location.origin,''));
 						var cleanSRC = p.url.replace(document.location.origin,'');
-						utils.files.LOADED[cleanSRC] = cleanSRC
+						bootloader.files.LOADED[cleanSRC] = cleanSRC
 						MODULE_MAP[p.module] = MODULE_MAP[p.module] || (!MODULE_PENDING[p.module] ? {} : null);
 						if(MODULE_MAP[p.module]){
 							MODULE_MAP[p.module]._dir_ = p.dir;
@@ -446,31 +424,41 @@ window.utils = function(root){
 			}
 		}
 	}
-	utils.ready(utils.scan_scripts);
+	bootloader.ready(bootloader.scan_scripts);
 	
 	$(document).ready(function(){
 		_READY_.resolve();
 	});
-	utils.on_config_ready = function(){
-		if(utils.config.get().bundles!==undefined){
-			if(utils.config.get().bundles.endsWith('.json')){
-				$.ajax({
-					  url: utils.config.get().bundles,
-					  dataType: 'json',
-					  async: false,
-					  cache : true,
-					  success: function(resp) {
-							utils.updateBundle(resp.bundles);
-					  }
-				});
-			} else utils.files.loadJSFile(utils.config.get().bundles)
+	bootloader.on_config_ready = function(){
+		var _bundles = bootloader.config.get().bundles;
+		if(_bundles !== undefined){
+			var link = _bundles;
+			var dataType = 'json';
+			var parse = function(resp) {
+				  return resp;
+			};
+			if(typeof _bundles === "object"){
+				link = _bundles.link;
+				if(_bundles.parse){
+					parse= _bundles.parse
+					dataType = undefined;
+				}
+			}
+			$.ajax({
+				  url: link,
+				  dataType: dataType,
+				  async: false,
+				  cache : true
+			}).done(function(resp){
+				bootloader.updateBundle(parse(resp)["bundles"]);
+			});
 		}
-		utils.scan_scripts();
+		bootloader.scan_scripts();
 	};
-	return utils;
-}(this);
+	return bootloader;
+});
 
-utils.define('utils.config', function(config) {
+_define_('bootloader.config', function(config) {
 	var CONFIG = {};
 	CONFIG.combine = true;
 	var trimSlashes = function(str){
@@ -492,7 +480,7 @@ utils.define('utils.config', function(config) {
 		CONFIG.combine = (options.combine!=undefined) ? options.combine : CONFIG.combine;
 		if(options.moduleDir){
 			for(var reg in options.moduleDir){
-				utils.files.DIR_MATCH[reg] = {
+				bootloader.files.DIR_MATCH[reg] = {
 						reg : new RegExp(reg.replace('\.',"\\.",'g').replace('*','\\.*','g')),
 						dir : options.moduleDir[reg]
 				}
@@ -506,7 +494,7 @@ utils.define('utils.config', function(config) {
 		}
 		CONFIG.bundles = options.bundle_list || options.bundles;
 		$.ajaxPrefilter(CONFIG.ajaxPrefilter);
-		utils.on_config_ready();
+		bootloader.on_config_ready();
 	};
 	config.get = function(moduleName){
 		if(moduleName === undefined) return CONFIG;
@@ -516,8 +504,12 @@ utils.define('utils.config', function(config) {
 		return CONFIG.moduleConfig[moduleName] || {};
 	};
 });
-utils.define('utils.files', function(files) {
-	var CONFIG = utils.config.get();
+
+_define_('bootloader.files', function(files) {
+	
+	var JSONUTIL = _module_("jsonutil");
+	 
+	var CONFIG = bootloader.config.get();
 	files.MODULES = {};
 	files.LOADED = {};
 	files.LOADING = {};
@@ -545,7 +537,8 @@ utils.define('utils.files', function(files) {
 				return this.DIR_MATCH[i].dir + module
 			}
 		} return module;
-	}
+	};
+	
     files.getInfo = function(_path){
     	if(files.MODULES[_path]) {
     		return files.MODULES[_path];
@@ -557,11 +550,11 @@ utils.define('utils.files', function(files) {
     		path = path+'.js';
     		isJS = true;
     	}
-    	var info = utils.url.info(path,CONFIG.contextPath,CONFIG.resourcePath);
+    	var info = bootloader.url.info(path,CONFIG.contextPath,CONFIG.resourcePath);
     	var module = info.file.replace(/([\w]+)\.js$|.css$/, "$1");
     	var ext = isJS ? "js" : "css"
     	if(info.isFile){
-    		info = utils.url.info(
+    		info = bootloader.url.info(
     				files.dirMatch(module) + "." + ext,
     				CONFIG.contextPath,CONFIG.resourcePath);
     	}
@@ -625,7 +618,7 @@ utils.define('utils.files', function(files) {
     };
     files.encrypt_list = function(module_files){
     	return md5(module_files);
-    	return "merged"+module_files[0].replace("\/","_",'g'); //utils.string.encode64(params);
+    	return "merged"+module_files[0].replace("\/","_",'g'); //bootloader.string.encode64(params);
     };
     files.prepare_js_request = function(module_files){
 		var params = module_files.join(',');
@@ -644,7 +637,7 @@ utils.define('utils.files', function(files) {
     
     files.loadJs = function(list,cb){
     	if(!files.script_rendered){
-    		utils.scan_scripts();
+    		bootloader.scan_scripts();
     	}
     	if(CONFIG.combineJS && list.length){
         	list = list.filter(function(module_file){
@@ -699,19 +692,15 @@ utils.define('utils.files', function(files) {
     };
     files.getJSON = function(){
     	return  files.get.apply(this,arguments).then(function(resp){
-    		return utils.json.parse(resp);
+    		return JSONUTIL.parse(resp);
     	});
     };
-	utils.ready(function(){
+    bootloader.ready(function(){
 		files.script_rendered = true
 	});
 });
 
-utils.proxy('jqutils.jsonutil').intercept('jsonutil').as(function(){
-	
-});
-
-utils.define('utils.url', function(url) {
+_define_('bootloader.url', function(url) {
 	url.getParam = function (name,_url) {
 	    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
 	    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
@@ -771,11 +760,11 @@ utils.define('utils.url', function(url) {
 
 (function(foo){
 	foo._require_ = function(){
-		return utils.require.apply(utils,arguments);
+		return bootloader.require.apply(bootloader,arguments);
 	};
 	var _module_ = foo._module_;
 	foo._module_ = function(){
-		var module = utils.module(arguments[0],false);
+		var module = bootloader.module(arguments[0],false);
 		if(!module || module.IS_REGISTERED_MODULE !== true){
 			return _module_.apply(foo,arguments);
 		} else {
@@ -784,12 +773,22 @@ utils.define('utils.url', function(url) {
 	};
 	foo._define_ = function(moduleName, fromModuleName,definition){
 		if(arguments.length ===3){
-			return utils.define(moduleName).extend(fromModuleName).as(definition);
+			return bootloader.define(moduleName).extend(fromModuleName).as(definition);
 		} else if(arguments.length === 2){
-			return utils.define(moduleName).as(fromModuleName);
+			return bootloader.define(moduleName).as(fromModuleName);
 		} else {
-			return utils.define(moduleName,fromModuleName);
+			return bootloader.define(moduleName,fromModuleName);
 		}
 	};
 })(this);
 
+///Fallback options
+var utils = utils || bootloader;
+
+var scripts = document.getElementsByTagName("script");
+var script = scripts[ scripts.length - 1 ].innerHTML;
+if ( script ) {
+	bootloader.ready(function(){
+		jQuery.globalEval( script );
+	});
+}

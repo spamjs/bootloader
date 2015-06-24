@@ -1,0 +1,18 @@
+{
+	"webmodules/bootloader_config": {
+		"js": ["bootloader.config.js"]
+	},
+
+	"webmodules/bootloader_only": {
+		"js": ["bootloader=bootloader.js"],
+		"on": ["webmodules/foo", "webmodules/jquery"]
+	},
+
+	"webmodules/bootloader": {
+		"js": ["bootloader=bootloader.js"],
+		"on": ["jqgeeks/bootloader_only", "jqgeeks/bootloader_config"]
+	}
+}
+
+
+
