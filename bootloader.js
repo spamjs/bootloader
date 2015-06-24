@@ -707,6 +707,10 @@ utils.define('utils.files', function(files) {
 	});
 });
 
+utils.proxy('jqutils.jsonutil').intercept('jsonutil').as(function(){
+	
+});
+
 utils.define('utils.url', function(url) {
 	url.getParam = function (name,_url) {
 	    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
